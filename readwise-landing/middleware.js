@@ -1,4 +1,3 @@
-import { createServerClient } from '@supabase/ssr'
 import { NextResponse } from 'next/server'
 
 export async function middleware(request) {
@@ -7,13 +6,8 @@ export async function middleware(request) {
         return NextResponse.next();
     }
 
-    let response = NextResponse.next({
-        request: {
-            headers: request.headers,
-        },
-    })
-
     try {
+        const { createServerClient } = await import('@supabase/ssr')
         const supabase = createServerClient(
             process.env.NEXT_PUBLIC_SUPABASE_URL,
             process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
@@ -22,58 +16,32 @@ export async function middleware(request) {
                     get(name) {
                         return request.cookies.get(name)?.value
                     },
-                    set(name, value, options) {
-                        request.cookies.set({
-                            name,
-                            value,
-                            ...options,
-                        })
-                        response = NextResponse.next({
-                            request: {
-                                headers: request.headers,
-                            },
-                        })
-                        response.cookies.set({
-                            name,
-                            value,
-                            ...options,
-                        })
-                    },
-                    remove(name, options) {
-                        request.cookies.set({
-                            name,
-                            value: '',
-                            ...options,
-                        })
-                        response = NextResponse.next({
-                            request: {
-                                headers: request.headers,
-                            },
-                        })
-                        response.cookies.set({
-                            name,
-                            value: '',
-                            ...options,
-                        })
-                    },
+                    set() {}, // Not needed in middleware
+                    remove() {}, // Not needed in middleware
                 },
             }
         )
 
         const { data: { user } } = await supabase.auth.getUser()
 
+        // Redirect logic
         if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
             return NextResponse.redirect(new URL('/auth/login', request.url))
         }
-
+        if (!user && request.nextUrl.pathname.startsWith('/profile')) {
+            return NextResponse.redirect(new URL('/auth/login', request.url))
+        }
+        if (!user && request.nextUrl.pathname.startsWith('/books')) {
+            return NextResponse.redirect(new URL('/auth/login', request.url))
+        }
         if (user && request.nextUrl.pathname.startsWith('/auth')) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     } catch (error) {
-        console.error('Middleware error:', error);
+        console.error('Middleware error:', error)
     }
 
-    return response
+    return NextResponse.next()
 }
 
 export const config = {

@@ -1,51 +1,177 @@
-import { createServerClient } from '@supabase/ssr'
-import { cookies } from 'next/headers'
-import { redirect } from 'next/navigation'
-import Link from 'next/link'
-import UpdateProgress from './UpdateProgress'
+"use client";
+import { useState, useEffect } from "react";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import { createClient } from "../../../lib/supabase/client";
 
-export default async function BookPage({ params }) {
-    const cookieStore = cookies()
-    const supabase = createServerClient(
-        process.env.NEXT_PUBLIC_SUPABASE_URL,
-        process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-        {
-            cookies: {
-                get(name) {
-                    return cookieStore.get(name)?.value
-                },
-            },
+export default function BookPage({ params }) {
+    const [book, setBook] = useState(null);
+    const [sessions, setSessions] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [error, setError] = useState(null);
+    const router = useRouter();
+    const supabase = createClient();
+    const bookId = params.id; // Get the book ID from the URL
+
+    useEffect(() => {
+        async function loadBook() {
+            try {
+                setLoading(true);
+                
+                // Check if user is authenticated
+                const { data: { user } } = await supabase.auth.getUser();
+                if (!user) {
+                    router.push('/auth/login');
+                    return;
+                }
+
+                // Fetch book details
+                const { data: bookData, error: bookError } = await supabase
+                    .from('books')
+                    .select('*')
+                    .eq('id', bookId)
+                    .eq('user_id', user.id)
+                    .single();
+
+                if (bookError) throw bookError;
+                if (!bookData) {
+                    router.push('/books');
+                    return;
+                }
+
+                setBook(bookData);
+
+                // Fetch reading sessions for this book
+                const { data: sessionsData } = await supabase
+                    .from('reading_sessions')
+                    .select('*')
+                    .eq('book_id', bookId)
+                    .order('session_date', { ascending: false })
+                    .limit(10);
+
+                setSessions(sessionsData || []);
+            } catch (err) {
+                console.error('Error loading book:', err);
+                setError(err.message);
+            } finally {
+                setLoading(false);
+            }
         }
-    )
 
-    const { data: { user } } = await supabase.auth.getUser()
-    
-    if (!user) {
-        redirect('/auth/login')
+        loadBook();
+    }, [bookId, router, supabase]);
+
+    // Update progress function
+    const updateProgress = async (pagesRead, minutesRead) => {
+        if (!pagesRead) return;
+
+        try {
+            const newPageCount = (book.current_page || 0) + parseInt(pagesRead);
+            const newStatus = newPageCount >= book.total_pages ? 'finished' : 'reading';
+
+            // Update book progress
+            const { error: bookError } = await supabase
+                .from('books')
+                .update({
+                    current_page: newPageCount,
+                    status: newStatus,
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', book.id);
+
+            if (bookError) throw bookError;
+
+            // Record reading session
+            const { error: sessionError } = await supabase
+                .from('reading_sessions')
+                .insert({
+                    book_id: book.id,
+                    user_id: book.user_id,
+                    pages_read: parseInt(pagesRead),
+                    minutes_read: parseInt(minutesRead) || null,
+                });
+
+            if (sessionError) throw sessionError;
+
+            // Refresh book data
+            setBook({ ...book, current_page: newPageCount, status: newStatus });
+            
+            // Refresh sessions
+            const { data: newSessions } = await supabase
+                .from('reading_sessions')
+                .select('*')
+                .eq('book_id', book.id)
+                .order('session_date', { ascending: false })
+                .limit(10);
+            
+            setSessions(newSessions || []);
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    const markAsFinished = async () => {
+        try {
+            const { error } = await supabase
+                .from('books')
+                .update({
+                    current_page: book.total_pages,
+                    status: 'finished',
+                    updated_at: new Date().toISOString(),
+                })
+                .eq('id', book.id);
+
+            if (error) throw error;
+
+            // Record final session
+            await supabase
+                .from('reading_sessions')
+                .insert({
+                    book_id: book.id,
+                    user_id: book.user_id,
+                    pages_read: book.total_pages - (book.current_page || 0),
+                });
+
+            setBook({ ...book, current_page: book.total_pages, status: 'finished' });
+        } catch (err) {
+            setError(err.message);
+        }
+    };
+
+    // Loading state
+    if (loading) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center">
+                    <div className="inline-block animate-spin rounded-full h-12 w-12 border-4 border-blue-900 border-t-transparent"></div>
+                    <p className="mt-4 text-gray-600">Loading book details...</p>
+                </div>
+            </div>
+        );
     }
 
-    // Get book details
-    const { data: book } = await supabase
-        .from('books')
-        .select('*')
-        .eq('id', params.id)
-        .eq('user_id', user.id)
-        .single()
-
-    if (!book) {
-        redirect('/books')
+    // Error state
+    if (error || !book) {
+        return (
+            <div className="min-h-screen flex items-center justify-center">
+                <div className="text-center p-8 bg-red-50 rounded-xl">
+                    <p className="text-red-600 mb-4">{error || "Book not found"}</p>
+                    <Link href="/books" className="text-blue-900 hover:underline">
+                        ← Back to Library
+                    </Link>
+                </div>
+            </div>
+        );
     }
 
-    // Get reading sessions for this book
-    const { data: sessions } = await supabase
-        .from('reading_sessions')
-        .select('*')
-        .eq('book_id', params.id)
-        .order('session_date', { ascending: false })
-        .limit(10)
+    // Progress percentage
+    const progressPercentage = book.total_pages 
+        ? Math.round(((book.current_page || 0) / book.total_pages) * 100) 
+        : 0;
 
     return (
         <div className="min-h-screen bg-gray-50">
+            {/* Navigation */}
             <nav className="bg-white shadow-sm">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
                     <Link href="/books" className="text-blue-900 hover:underline">
@@ -58,7 +184,8 @@ export default async function BookPage({ params }) {
             </nav>
 
             <div className="max-w-4xl mx-auto px-4 py-8">
-                <div className="bg-white rounded-xl shadow overflow-hidden">
+                {/* Book Details Card */}
+                <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="md:flex">
                         {/* Book Cover */}
                         <div className="md:w-1/3 p-6">
@@ -103,27 +230,32 @@ export default async function BookPage({ params }) {
                                     <div className="flex justify-between text-sm mb-1">
                                         <span>Progress</span>
                                         <span>
-                                            {book.current_page || 0} / {book.total_pages} pages
-                                            ({Math.round(((book.current_page || 0) / book.total_pages) * 100)}%)
+                                            {book.current_page || 0} / {book.total_pages} pages ({progressPercentage}%)
                                         </span>
                                     </div>
                                     <div className="w-full bg-gray-200 rounded-full h-4">
                                         <div 
                                             className="bg-green-600 h-4 rounded-full transition-all"
-                                            style={{ width: `${((book.current_page || 0) / book.total_pages) * 100}%` }}
+                                            style={{ width: `${progressPercentage}%` }}
                                         />
                                     </div>
                                 </div>
                             )}
 
-                            {/* Update Progress Component */}
-                            <UpdateProgress book={book} />
+                            {/* Update Progress Form */}
+                            {book.status !== 'finished' && (
+                                <ProgressForm 
+                                    book={book} 
+                                    onUpdate={updateProgress}
+                                    onFinish={markAsFinished}
+                                />
+                            )}
                         </div>
                     </div>
                 </div>
 
                 {/* Reading History */}
-                {sessions && sessions.length > 0 && (
+                {sessions.length > 0 && (
                     <div className="mt-8 bg-white rounded-xl shadow p-6">
                         <h2 className="text-xl font-bold text-blue-900 mb-4">Reading History</h2>
                         <div className="space-y-3">
@@ -145,5 +277,79 @@ export default async function BookPage({ params }) {
                 )}
             </div>
         </div>
-    )
+    );
+}
+
+// Progress Form Component
+function ProgressForm({ book, onUpdate, onFinish }) {
+    const [pagesRead, setPagesRead] = useState("");
+    const [minutesRead, setMinutesRead] = useState("");
+    const [updating, setUpdating] = useState(false);
+
+    const handleSubmit = async (e) => {
+        e.preventDefault();
+        if (!pagesRead) return;
+        
+        setUpdating(true);
+        await onUpdate(pagesRead, minutesRead);
+        setPagesRead("");
+        setMinutesRead("");
+        setUpdating(false);
+    };
+
+    const remainingPages = book.total_pages - (book.current_page || 0);
+
+    return (
+        <div className="space-y-4">
+            <form onSubmit={handleSubmit} className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-1">Pages read</label>
+                        <input
+                            type="number"
+                            value={pagesRead}
+                            onChange={(e) => setPagesRead(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                            placeholder={`Max ${remainingPages}`}
+                            min="1"
+                            max={remainingPages}
+                            required
+                        />
+                    </div>
+                    <div>
+                        <label className="block text-sm text-gray-600 mb-1">Minutes read</label>
+                        <input
+                            type="number"
+                            value={minutesRead}
+                            onChange={(e) => setMinutesRead(e.target.value)}
+                            className="w-full px-3 py-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-900"
+                            placeholder="Optional"
+                            min="1"
+                        />
+                    </div>
+                </div>
+
+                <div className="flex space-x-4">
+                    <button
+                        type="submit"
+                        disabled={updating || !pagesRead}
+                        className="flex-1 bg-green-600 text-white py-2 rounded-lg hover:bg-green-700 transition disabled:opacity-50"
+                    >
+                        {updating ? "Updating..." : "Update Progress"}
+                    </button>
+
+                    {remainingPages > 0 && (
+                        <button
+                            type="button"
+                            onClick={onFinish}
+                            disabled={updating}
+                            className="flex-1 bg-blue-900 text-white py-2 rounded-lg hover:bg-blue-800 transition disabled:opacity-50"
+                        >
+                            Mark as Finished
+                        </button>
+                    )}
+                </div>
+            </form>
+        </div>
+    );
 }
