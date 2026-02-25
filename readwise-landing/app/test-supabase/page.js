@@ -3,14 +3,13 @@ import { useEffect, useState } from "react";
 import { createClient } from "../../lib/supabase/client";
 
 export default function TestSupabase() {
-    const [status, setStatus] = useState("Testing connection...");
+    const [status, setStatus] = useState("Loading...");
     const [error, setError] = useState(null);
-    const supabase = createClient();
+    const [supabase] = useState(() => createClient());
 
     useEffect(() => {
         async function testConnection() {
             try {
-                // Test 1: Can we connect?
                 const { data, error } = await supabase
                     .from('profiles')
                     .select('count')
@@ -19,10 +18,6 @@ export default function TestSupabase() {
                 if (error) throw error;
                 
                 setStatus("✅ Supabase connected successfully!");
-                
-                // Test 2: Check if tables exist
-                setStatus(prev => prev + "\n Checking tables...");
-                
             } catch (err) {
                 setError(err.message);
                 setStatus("❌ Connection failed");
@@ -30,8 +25,9 @@ export default function TestSupabase() {
         }
         
         testConnection();
-    }, []);
+    }, [supabase]);
 
+    // Don't render until client-side
     return (
         <div className="min-h-screen flex items-center justify-center">
             <div className="p-8 bg-white rounded-xl shadow max-w-md">
