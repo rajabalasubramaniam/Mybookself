@@ -1,5 +1,6 @@
 import "./../styles/globals.css";
 import { Inter } from "next/font/google";
+import GoogleAnalytics from "./components/GoogleAnalytics";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -15,6 +16,7 @@ export default function RootLayout({ children }) {
     <html lang="en" className="scroll-smooth">
       <body className={`${inter.className} bg-white text-gray-800`}>
         {children}
+		<GoogleAnalytics />
       </body>
     </html>
   );
