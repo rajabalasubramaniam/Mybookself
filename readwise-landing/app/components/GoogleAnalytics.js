@@ -1,51 +1,50 @@
 "use client";
 import { Suspense } from 'react';
 import Script from "next/script";
-import { usePathname, useSearchParams } from "next/navigation";
-import { useEffect } from "react";
+import { useSearchParams } from "next/navigation";
 
-const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
+// Inner component that uses the hook
+function AnalyticsTracker() {
+  const searchParams = useSearchParams();
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-export default function GoogleAnalytics() {
-    const pathname = usePathname();
+  useEffect(() => {
+    if (!GA_MEASUREMENT_ID) return;
+
+    // Track page view with search params
+    const url = window.location.pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
     
-	function AnalyticsTracker() {
-		const searchParams = useSearchParams();
+    window.gtag?.("config", GA_MEASUREMENT_ID, {
+      page_path: url,
+    });
+  }, [searchParams]);
 
-    useEffect(() => {
-        if (!GA_MEASUREMENT_ID || !pathname) return;
+  return null;
+}
 
-        const url = pathname + (searchParams?.toString() ? `?${searchParams.toString()}` : "");
-        
-        // Track page view
-        window.gtag?.("config", GA_MEASUREMENT_ID, {
-            page_path: url,
-        });
-    }, [pathname, searchParams]);
+// Main component with Suspense
+export default function GoogleAnalytics() {
+  const GA_MEASUREMENT_ID = process.env.NEXT_PUBLIC_GA_MEASUREMENT_ID;
 
-    if (!GA_MEASUREMENT_ID) return null;
-	}
-	
-	export default function GoogleAnalytics() {
-    return (
-        <>
-            <Script
-                src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
-                strategy="afterInteractive"
-            />
-            <Script id="google-analytics" strategy="afterInteractive">
-                {`
-                    window.dataLayer = window.dataLayer || [];
-                    function gtag(){dataLayer.push(arguments);}
-                    gtag('js', new Date());
-                    gtag('config', '${GA_MEASUREMENT_ID}', {
-                        send_page_view: false
-                    });
-                `}
-            </Script>
-        </>
-		<Suspense fallback={null}>
+  if (!GA_MEASUREMENT_ID) return null;
+
+  return (
+    <Suspense fallback={null}>
       <AnalyticsTracker />
-		</Suspense>
-    );
+      <Script
+        src={`https://www.googletagmanager.com/gtag/js?id=${GA_MEASUREMENT_ID}`}
+        strategy="afterInteractive"
+      />
+      <Script id="google-analytics" strategy="afterInteractive">
+        {`
+          window.dataLayer = window.dataLayer || [];
+          function gtag(){dataLayer.push(arguments);}
+          gtag('js', new Date());
+          gtag('config', '${GA_MEASUREMENT_ID}', {
+            send_page_view: false
+          });
+        `}
+      </Script>
+    </Suspense>
+  );
 }

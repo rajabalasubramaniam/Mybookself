@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "../lib/supabase/client";
 import { Suspense } from 'react'
-import SearchParamsHandler from './SearchParamsHandler'
+import SearchParamsHandler from '../app/components/SearchParamsHandler'
 
 export default function Header() {
     const [open, setOpen] = useState(false);
