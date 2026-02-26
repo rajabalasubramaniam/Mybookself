@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import Link from "next/link";
 import { createClient } from "../lib/supabase/client";
+import { Suspense } from 'react'
+import SearchParamsHandler from './SearchParamsHandler'
 
 export default function Header() {
     const [open, setOpen] = useState(false);
@@ -18,6 +20,11 @@ export default function Header() {
 
     return (
         <header className="fixed w-full bg-white shadow-sm z-50">
+		
+			<Suspense fallback={null}>
+                <SearchParamsHandler />
+            </Suspense>
+			
             <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
                 <Link href="/" className="text-2xl font-bold text-blue-900">
                     ReadWise
@@ -80,6 +87,7 @@ export default function Header() {
                     )}
                 </div>
             )}
+			
         </header>
     );
 }
