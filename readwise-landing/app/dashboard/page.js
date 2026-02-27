@@ -1,8 +1,10 @@
 "use client";
+import Statistics from './Statistics';
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
+import Goals from './Goals';
 
 export default function Dashboard() {
     const [user, setUser] = useState(null);
@@ -117,6 +119,18 @@ export default function Dashboard() {
                         <h3 className="text-xl font-semibold text-blue-900">📚 View My Library</h3>
                     </Link>
                 </div>
+				
+				{/* Statistics component */}
+				<div className="mt-12">
+					<h2 className="text-2xl font-bold text-blue-900 mb-6">📊 Your Reading Statistics</h2>
+					<Statistics />
+				</div>
+				
+				{/* Goals component */}
+				<div className="mt-12">
+					<Goals />
+				</div>
+				
             </div>
         </div>
     );
