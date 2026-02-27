@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
 import Goals from './Goals';
+import Challenges from './Challenges';
 
 export default function Dashboard() {
     const [user, setUser] = useState(null);
@@ -129,6 +130,11 @@ export default function Dashboard() {
 				{/* Goals component */}
 				<div className="mt-12">
 					<Goals />
+				</div>
+				
+				{/* Challenges */}
+				<div className="mt-12">
+					<Challenges />
 				</div>
 				
             </div>

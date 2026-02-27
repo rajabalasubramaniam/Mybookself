@@ -296,6 +296,37 @@ function ProgressForm({ book, onUpdate, onFinish }) {
         setMinutesRead("");
         setUpdating(false);
     };
+	
+	// Add this function in your component
+	const shareBookFinished = async () => {
+		try {
+		const { data: { user } } = await supabase.auth.getUser();
+    
+		await supabase
+		.from('shares')
+		.insert({
+			user_id: user.id,
+			share_type: 'book_finished',
+			reference_id: book.id,
+			share_data: { title: book.title, author: book.author }
+		});
+
+		if (navigator.share) {
+		navigator.share({
+			title: 'Just finished a book!',
+			text: `I just finished reading "${book.title}" by ${book.author || 'Unknown'} on ReadWise!`,
+			url: window.location.origin
+		});
+		} else {
+		navigator.clipboard.writeText(
+			`I just finished reading "${book.title}" by ${book.author || 'Unknown'} on ReadWise! ${window.location.origin}`
+		);
+		alert('Share link copied to clipboard!');
+		}
+	} catch (error) {
+		console.error('Error sharing:', error);
+	}
+	};
 
     const remainingPages = book.total_pages - (book.current_page || 0);
 
@@ -349,6 +380,18 @@ function ProgressForm({ book, onUpdate, onFinish }) {
                         </button>
                     )}
                 </div>
+				
+				{status === 'finished' && (
+					<div className="mt-4">
+						<button
+						onClick={shareBookFinished}
+						className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800"
+						>
+						📤 Share Achievement
+						</button>
+					</div>
+					)}
+					
             </form>
         </div>
     );
