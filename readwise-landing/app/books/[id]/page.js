@@ -11,57 +11,130 @@ export default function BookPage({ params }) {
     const [error, setError] = useState(null);
     const router = useRouter();
     const supabase = createClient();
-    const bookId = params.id; // Get the book ID from the URL
+    const bookId = params.id;
 
     useEffect(() => {
-        async function loadBook() {
-            try {
-                setLoading(true);
-                
-                // Check if user is authenticated
-                const { data: { user } } = await supabase.auth.getUser();
-                if (!user) {
-                    router.push('/auth/login');
-                    return;
-                }
-
-                // Fetch book details
-                const { data: bookData, error: bookError } = await supabase
-                    .from('books')
-                    .select('*')
-                    .eq('id', bookId)
-                    .eq('user_id', user.id)
-                    .single();
-
-                if (bookError) throw bookError;
-                if (!bookData) {
-                    router.push('/books');
-                    return;
-                }
-
-                setBook(bookData);
-
-                // Fetch reading sessions for this book
-                const { data: sessionsData } = await supabase
-                    .from('reading_sessions')
-                    .select('*')
-                    .eq('book_id', bookId)
-                    .order('session_date', { ascending: false })
-                    .limit(10);
-
-                setSessions(sessionsData || []);
-            } catch (err) {
-                console.error('Error loading book:', err);
-                setError(err.message);
-            } finally {
-                setLoading(false);
-            }
-        }
-
         loadBook();
-    }, [bookId, router, supabase]);
+    }, [bookId]);
 
-    // Update progress function
+    const loadBook = async () => {
+        try {
+            setLoading(true);
+            
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+                router.push('/auth/login');
+                return;
+            }
+
+            const { data: bookData, error: bookError } = await supabase
+                .from('books')
+                .select('*')
+                .eq('id', bookId)
+                .eq('user_id', user.id)
+                .single();
+
+            if (bookError) throw bookError;
+            if (!bookData) {
+                router.push('/books');
+                return;
+            }
+
+            setBook(bookData);
+
+            const { data: sessionsData } = await supabase
+                .from('reading_sessions')
+                .select('*')
+                .eq('book_id', bookId)
+                .order('session_date', { ascending: false })
+                .limit(10);
+
+            setSessions(sessionsData || []);
+        } catch (err) {
+            console.error('Error loading book:', err);
+            setError(err.message);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const updateChallengeProgress = async (actionType, pagesRead = 0) => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            const { data: userChallenges } = await supabase
+                .from('user_challenges')
+                .select(`
+                    *,
+                    challenge:challenges(*)
+                `)
+                .eq('user_id', user.id)
+                .eq('completed', false);
+
+            if (!userChallenges) return;
+
+            for (const uc of userChallenges) {
+                let increment = 0;
+                
+                if (actionType === 'book_finished' && uc.challenge.challenge_type === 'books') {
+                    increment = 1;
+                } else if (actionType === 'pages_read' && uc.challenge.challenge_type === 'pages') {
+                    increment = pagesRead;
+                }
+
+                if (increment > 0) {
+                    const newValue = uc.current_value + increment;
+                    const completed = newValue >= uc.challenge.target_value;
+
+                    await supabase
+                        .from('user_challenges')
+                        .update({
+                            current_value: newValue,
+                            completed: completed,
+                            completed_at: completed ? new Date().toISOString() : null
+                        })
+                        .eq('id', uc.id);
+                }
+            }
+        } catch (error) {
+            console.error('Error updating challenges:', error);
+        }
+    };
+
+    const shareBookFinished = async () => {
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            
+            await supabase
+                .from('shares')
+                .insert({
+                    user_id: user.id,
+                    share_type: 'book_finished',
+                    reference_id: book.id,
+                    share_data: { 
+                        title: book.title, 
+                        author: book.author,
+                        pages: book.total_pages 
+                    }
+                });
+
+            if (navigator.share) {
+                navigator.share({
+                    title: 'Just finished a book!',
+                    text: `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on ReadWise!`,
+                    url: window.location.origin
+                });
+            } else {
+                navigator.clipboard.writeText(
+                    `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on ReadWise! ${window.location.origin}`
+                );
+                alert('✨ Share link copied to clipboard!');
+            }
+        } catch (error) {
+            console.error('Error sharing:', error);
+        }
+    };
+
     const updateProgress = async (pagesRead, minutesRead) => {
         if (!pagesRead) return;
 
@@ -69,7 +142,6 @@ export default function BookPage({ params }) {
             const newPageCount = (book.current_page || 0) + parseInt(pagesRead);
             const newStatus = newPageCount >= book.total_pages ? 'finished' : 'reading';
 
-            // Update book progress
             const { error: bookError } = await supabase
                 .from('books')
                 .update({
@@ -81,7 +153,6 @@ export default function BookPage({ params }) {
 
             if (bookError) throw bookError;
 
-            // Record reading session
             const { error: sessionError } = await supabase
                 .from('reading_sessions')
                 .insert({
@@ -93,10 +164,11 @@ export default function BookPage({ params }) {
 
             if (sessionError) throw sessionError;
 
-            // Refresh book data
+            // Update challenge progress for pages read
+            await updateChallengeProgress('pages_read', parseInt(pagesRead));
+
             setBook({ ...book, current_page: newPageCount, status: newStatus });
             
-            // Refresh sessions
             const { data: newSessions } = await supabase
                 .from('reading_sessions')
                 .select('*')
@@ -112,8 +184,6 @@ export default function BookPage({ params }) {
 
     const markAsFinished = async () => {
         try {
-			setLoading(true);
-			
             const { error } = await supabase
                 .from('books')
                 .update({
@@ -125,7 +195,6 @@ export default function BookPage({ params }) {
 
             if (error) throw error;
 
-            // Record final session
             await supabase
                 .from('reading_sessions')
                 .insert({
@@ -133,66 +202,16 @@ export default function BookPage({ params }) {
                     user_id: book.user_id,
                     pages_read: book.total_pages - (book.current_page || 0),
                 });
-				
-				await updateChallengeProgress('book_finished');
+
+            // Update challenge progress for finished book
+            await updateChallengeProgress('book_finished');
 
             setBook({ ...book, current_page: book.total_pages, status: 'finished' });
         } catch (err) {
             setError(err.message);
-        } finally {
-			setLoading(false);
-		}
+        }
     };
 
-			// 🆕 Add this new function to update challenges
-const updateChallengeProgress = async (actionType) => {
-  try {
-    const { data: { user } } = await supabase.auth.getUser();
-    
-    // Get user's active challenges
-    const { data: userChallenges } = await supabase
-      .from('user_challenges')
-      .select(`
-        *,
-        challenge:challenges(*)
-      `)
-      .eq('user_id', user.id)
-      .eq('completed', false);
-
-    if (!userChallenges) return;
-
-    // Update each challenge based on its type
-    for (const uc of userChallenges) {
-      let increment = 0;
-      
-      if (actionType === 'book_finished' && uc.challenge.challenge_type === 'books') {
-        increment = 1;
-      } else if (actionType === 'pages_read' && uc.challenge.challenge_type === 'pages') {
-        increment = book.total_pages - (book.current_page || 0);
-      } else if (actionType === 'streak_day' && uc.challenge.challenge_type === 'streak') {
-        increment = 1;
-      }
-
-      if (increment > 0) {
-        const newValue = uc.current_value + increment;
-        const completed = newValue >= uc.challenge.target_value;
-
-        await supabase
-          .from('user_challenges')
-          .update({
-            current_value: newValue,
-            completed: completed,
-            completed_at: completed ? new Date().toISOString() : null
-          })
-          .eq('id', uc.id);
-      }
-    }
-  } catch (error) {
-    console.error('Error updating challenges:', error);
-  }
-};
-
-    // Loading state
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -204,7 +223,6 @@ const updateChallengeProgress = async (actionType) => {
         );
     }
 
-    // Error state
     if (error || !book) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -218,14 +236,12 @@ const updateChallengeProgress = async (actionType) => {
         );
     }
 
-    // Progress percentage
     const progressPercentage = book.total_pages 
         ? Math.round(((book.current_page || 0) / book.total_pages) * 100) 
         : 0;
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Navigation */}
             <nav className="bg-white shadow-sm">
                 <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
                     <Link href="/books" className="text-blue-900 hover:underline">
@@ -238,10 +254,8 @@ const updateChallengeProgress = async (actionType) => {
             </nav>
 
             <div className="max-w-4xl mx-auto px-4 py-8">
-                {/* Book Details Card */}
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">
                     <div className="md:flex">
-                        {/* Book Cover */}
                         <div className="md:w-1/3 p-6">
                             {book.cover_url ? (
                                 <img 
@@ -256,7 +270,6 @@ const updateChallengeProgress = async (actionType) => {
                             )}
                         </div>
 
-                        {/* Book Details */}
                         <div className="md:w-2/3 p-6">
                             <h1 className="text-3xl font-bold text-blue-900 mb-2">{book.title}</h1>
                             <p className="text-xl text-gray-600 mb-4">by {book.author || 'Unknown'}</p>
@@ -278,7 +291,6 @@ const updateChallengeProgress = async (actionType) => {
                                 )}
                             </div>
 
-                            {/* Progress Bar */}
                             {book.total_pages > 0 && (
                                 <div className="mb-6">
                                     <div className="flex justify-between text-sm mb-1">
@@ -296,12 +308,20 @@ const updateChallengeProgress = async (actionType) => {
                                 </div>
                             )}
 
-                            {/* Update Progress Form */}
-                            {book.status !== 'finished' && (
-								<div className="mt-6 space-y-4">
-								<div className="p-4 bg-green-100 text-green-800 rounded-lg text-center">
-								🎉 Congratulations! You've finished this book!
-								 </div>
+                            {book.status === 'finished' ? (
+                                <div className="mt-6 space-y-4">
+                                    <div className="p-4 bg-green-100 text-green-800 rounded-lg text-center">
+                                        🎉 Congratulations! You've finished this book!
+                                    </div>
+                                    <button
+                                        onClick={shareBookFinished}
+                                        className="w-full bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-800 transition flex items-center justify-center space-x-2"
+                                    >
+                                        <span>📤</span>
+                                        <span>Share Achievement</span>
+                                    </button>
+                                </div>
+                            ) : (
                                 <ProgressForm 
                                     book={book} 
                                     onUpdate={updateProgress}
@@ -312,7 +332,6 @@ const updateChallengeProgress = async (actionType) => {
                     </div>
                 </div>
 
-                {/* Reading History */}
                 {sessions.length > 0 && (
                     <div className="mt-8 bg-white rounded-xl shadow p-6">
                         <h2 className="text-xl font-bold text-blue-900 mb-4">Reading History</h2>
@@ -338,7 +357,6 @@ const updateChallengeProgress = async (actionType) => {
     );
 }
 
-// Progress Form Component
 function ProgressForm({ book, onUpdate, onFinish }) {
     const [pagesRead, setPagesRead] = useState("");
     const [minutesRead, setMinutesRead] = useState("");
@@ -354,37 +372,6 @@ function ProgressForm({ book, onUpdate, onFinish }) {
         setMinutesRead("");
         setUpdating(false);
     };
-	
-	// Add this function in your component
-	const shareBookFinished = async () => {
-		try {
-		const { data: { user } } = await supabase.auth.getUser();
-    
-		await supabase
-		.from('shares')
-		.insert({
-			user_id: user.id,
-			share_type: 'book_finished',
-			reference_id: book.id,
-			share_data: { title: book.title, author: book.author, pages: book.total_pages }
-		});
-
-		if (navigator.share) {
-		navigator.share({
-			title: 'Just finished a book!',
-			text: `I just finished reading "${book.title}" by ${book.author || 'Unknown'} on ReadWise!`,
-			url: window.location.origin
-		});
-		} else {
-		navigator.clipboard.writeText(
-			`I just finished reading "${book.title}" by ${book.author || 'Unknown'} on ReadWise! ${window.location.origin}`
-		);
-		alert('Share link copied to clipboard!');
-		}
-	} catch (error) {
-		console.error('Error sharing:', error);
-	}
-	};
 
     const remainingPages = book.total_pages - (book.current_page || 0);
 
@@ -438,20 +425,6 @@ function ProgressForm({ book, onUpdate, onFinish }) {
                         </button>
                     )}
                 </div>
-				
-				{status === 'finished' && (
-					<div className="mt-4">
-						<button
-						  onClick={shareBookFinished}
-						  className="w-full bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-800 transition flex items-center justify-center space-x-2"
-							>
-							<span>📤</span>
-							<span>Share Achievement</span>
-						</button>
- 
-					</div>
-					)}
-					
             </form>
         </div>
     );
