@@ -112,6 +112,8 @@ export default function BookPage({ params }) {
 
     const markAsFinished = async () => {
         try {
+			setLoading(true);
+			
             const { error } = await supabase
                 .from('books')
                 .update({
@@ -131,12 +133,64 @@ export default function BookPage({ params }) {
                     user_id: book.user_id,
                     pages_read: book.total_pages - (book.current_page || 0),
                 });
+				
+				await updateChallengeProgress('book_finished');
 
             setBook({ ...book, current_page: book.total_pages, status: 'finished' });
         } catch (err) {
             setError(err.message);
-        }
+        } finally {
+			setLoading(false);
+		}
     };
+
+			// 🆕 Add this new function to update challenges
+const updateChallengeProgress = async (actionType) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    
+    // Get user's active challenges
+    const { data: userChallenges } = await supabase
+      .from('user_challenges')
+      .select(`
+        *,
+        challenge:challenges(*)
+      `)
+      .eq('user_id', user.id)
+      .eq('completed', false);
+
+    if (!userChallenges) return;
+
+    // Update each challenge based on its type
+    for (const uc of userChallenges) {
+      let increment = 0;
+      
+      if (actionType === 'book_finished' && uc.challenge.challenge_type === 'books') {
+        increment = 1;
+      } else if (actionType === 'pages_read' && uc.challenge.challenge_type === 'pages') {
+        increment = book.total_pages - (book.current_page || 0);
+      } else if (actionType === 'streak_day' && uc.challenge.challenge_type === 'streak') {
+        increment = 1;
+      }
+
+      if (increment > 0) {
+        const newValue = uc.current_value + increment;
+        const completed = newValue >= uc.challenge.target_value;
+
+        await supabase
+          .from('user_challenges')
+          .update({
+            current_value: newValue,
+            completed: completed,
+            completed_at: completed ? new Date().toISOString() : null
+          })
+          .eq('id', uc.id);
+      }
+    }
+  } catch (error) {
+    console.error('Error updating challenges:', error);
+  }
+};
 
     // Loading state
     if (loading) {
@@ -244,6 +298,10 @@ export default function BookPage({ params }) {
 
                             {/* Update Progress Form */}
                             {book.status !== 'finished' && (
+								<div className="mt-6 space-y-4">
+								<div className="p-4 bg-green-100 text-green-800 rounded-lg text-center">
+								🎉 Congratulations! You've finished this book!
+								 </div>
                                 <ProgressForm 
                                     book={book} 
                                     onUpdate={updateProgress}
@@ -308,7 +366,7 @@ function ProgressForm({ book, onUpdate, onFinish }) {
 			user_id: user.id,
 			share_type: 'book_finished',
 			reference_id: book.id,
-			share_data: { title: book.title, author: book.author }
+			share_data: { title: book.title, author: book.author, pages: book.total_pages }
 		});
 
 		if (navigator.share) {
@@ -384,11 +442,13 @@ function ProgressForm({ book, onUpdate, onFinish }) {
 				{status === 'finished' && (
 					<div className="mt-4">
 						<button
-						onClick={shareBookFinished}
-						className="bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800"
-						>
-						📤 Share Achievement
+						  onClick={shareBookFinished}
+						  className="w-full bg-blue-900 text-white py-3 rounded-lg hover:bg-blue-800 transition flex items-center justify-center space-x-2"
+							>
+							<span>📤</span>
+							<span>Share Achievement</span>
 						</button>
+ 
 					</div>
 					)}
 					
