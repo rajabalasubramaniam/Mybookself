@@ -127,7 +127,7 @@ export default function Statistics() {
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
-      <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-4">
         <StatCard 
           title="Total Books" 
           value={stats.totalBooks} 
@@ -152,6 +152,30 @@ export default function Statistics() {
           icon="✅"
           color="bg-purple-600"
         />
+		<StatCard 
+			title="Avg Pages/Day" 
+			value={Math.round(stats.pagesRead / 30) || 0} 
+			icon="📊"
+			color="bg-purple-600"
+		/>
+		<StatCard 
+			title="Reading Speed" 
+			value={`${Math.round(stats.pagesRead / (stats.minutesRead || 1) * 60) || 0} pgs/hr`} 
+			icon="⚡"
+			color="bg-red-500"
+		/>
+		<StatCard 
+			title="Favorite Genre" 
+			value={stats.topGenre || 'N/A'} 
+			icon="🎯"
+			color="bg-indigo-600"
+		/>
+		<StatCard 
+			title="Completion Rate" 
+			value={`${Math.round((stats.finishedBooks / stats.totalBooks) * 100) || 0}%`} 
+			icon="✅"
+			color="bg-teal-600"
+		/>
       </div>
 
       {/* Charts Grid */}

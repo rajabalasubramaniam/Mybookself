@@ -1,5 +1,5 @@
 "use client";
-import { Suspense, useEffect } from 'react';  // Added useEffect here!
+import { Suspense } from 'react';
 import Script from "next/script";
 import { useSearchParams } from "next/navigation";
 
@@ -17,7 +17,7 @@ function AnalyticsTracker() {
     window.gtag?.("config", GA_MEASUREMENT_ID, {
       page_path: url,
     });
-  }, [searchParams, GA_MEASUREMENT_ID]);
+  }, [searchParams]);
 
   return null;
 }
