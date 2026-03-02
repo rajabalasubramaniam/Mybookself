@@ -1,9 +1,12 @@
 "use client";
+import { searchBooksByISBN } from "../../../lib/bookSearch";
 import { useState, useEffect } from "react";
 import { Html5QrcodeScanner } from "html5-qrcode";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../../lib/supabase/client";
 import axios from "axios";
+import Link from "next/link";
+
 
 export default function ScanBook() {
     const [scanResult, setScanResult] = useState(null);
@@ -39,30 +42,18 @@ export default function ScanBook() {
     };
 
     const fetchBookByISBN = async (isbn) => {
-        setLoading(true);
-        try {
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY;
-            const response = await axios.get(
-                `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${apiKey}`
-            );
-
-            if (response.data.items && response.data.items[0]) {
-                const book = response.data.items[0].volumeInfo;
-                setBookData({
-                    title: book.title,
-                    author: book.authors?.join(', '),
-                    isbn: isbn,
-                    cover_url: book.imageLinks?.thumbnail?.replace('http:', 'https:'),
-                    total_pages: book.pageCount,
-                    description: book.description
-                });
-            }
-        } catch (error) {
-            console.error('Error fetching book:', error);
-        } finally {
-            setLoading(false);
-        }
-    };
+    setLoading(true);
+    setError(null);
+    
+    try {
+        const bookData = await searchBooksByISBN(isbn);
+        setBookData(bookData);
+    } catch (error) {
+        setError(error.message);
+    } finally {
+        setLoading(false);
+    }
+};
 
     const addToLibrary = async () => {
         if (!bookData) return;
@@ -91,9 +82,22 @@ export default function ScanBook() {
     };
 
     return (
-        <div className="min-h-screen bg-gray-50 py-8">
-            <div className="max-w-2xl mx-auto px-4">
-                <h1 className="text-3xl font-bold text-blue-900 mb-6">📷 Scan Book ISBN</h1>
+		<div className="min-h-screen bg-gray-50 py-8">
+		    <div className="max-w-2xl mx-auto px-4">
+			<div className="mb-4 flex justify-between items-center">
+                <Link href="/books" className="text-blue-900 hover:underline flex items-center">
+                    ← Back to Library
+                </Link>
+                <Link href="/dashboard" className="text-blue-900 hover:underline">
+                    Dashboard
+                </Link>
+            </div>	
+                <div className="mb-8">
+                <h1 className="text-3xl font-bold text-blue-900">📷 Scan Book ISBN</h1>
+                <p className="text-gray-600 mt-2">
+                    Hold your phone camera over the barcode on your book
+                </p>
+            </div>
                 
                 <div id="reader" className="mb-6"></div>
 
@@ -103,7 +107,13 @@ export default function ScanBook() {
                         <p className="mt-2">Fetching book details...</p>
                     </div>
                 )}
-
+				
+				{bookData.source && (
+					<p className="text-xs text-gray-400 mt-2">
+					Source: {bookData.source}
+					</p>
+				)}
+				
                 {bookData && (
                     <div className="bg-white rounded-xl shadow-lg p-6">
                         <h2 className="text-xl font-bold mb-4">Book Found!</h2>

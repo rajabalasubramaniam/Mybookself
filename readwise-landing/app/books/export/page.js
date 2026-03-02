@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../../lib/supabase/client";
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
+import Link from "next/link";
 
 export default function ExportLibrary() {
     const [books, setBooks] = useState([]);
@@ -75,6 +76,15 @@ export default function ExportLibrary() {
     };
 
     return (
+		<div className="mb-4 flex justify-between items-center">
+			<Link href="/books" className="text-blue-900 hover:underline flex items-center">
+			← Back to Library
+			</Link>
+			<Link href="/dashboard" className="text-blue-900 hover:underline">
+			Dashboard
+			</Link>
+		</div>
+	
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">
                 <h1 className="text-3xl font-bold text-blue-900 mb-6">📤 Export Your Library</h1>

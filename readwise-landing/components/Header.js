@@ -35,8 +35,11 @@ export default function Header() {
                     <a href="#features" className="hover:text-blue-900">Features</a>
                     <a href="#how" className="hover:text-blue-900">How It Works</a>
                     <a href="#pricing" className="hover:text-blue-900">Pricing</a>
+					
+					<Link href="/books" className="hover:text-blue-900">📚 Library</Link>
 					<Link href="/books/scan" className="hover:text-blue-900">📷 Scan</Link>
 					<Link href="/books/export" className="hover:text-blue-900">📤 Export</Link>
+					<Link href="/dashboard" className="hover:text-blue-900">📊 Dashboard</Link>
                     
                     {user ? (
                         <Link 

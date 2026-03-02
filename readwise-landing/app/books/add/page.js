@@ -3,6 +3,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../../lib/supabase/client";
 import axios from "axios";
+//import Notification from "../../components/Notification";  
+import Notification from "../../../components/Notification";
+import Link from "next/link";  
 
 export default function AddBook() {
     const [searchQuery, setSearchQuery] = useState("");
@@ -15,7 +18,7 @@ export default function AddBook() {
     const [success, setSuccess] = useState(false);
     const router = useRouter();
     const supabase = createClient();
-
+	
     // Manual entry form state
     const [manualBook, setManualBook] = useState({
         title: "",
@@ -24,6 +27,7 @@ export default function AddBook() {
         total_pages: "",
         cover_url: "",
     });
+	const [showNotification, setShowNotification] = useState(false);
 
     // Search Google Books with API key
     const searchBooks = async () => {
@@ -162,6 +166,7 @@ export default function AddBook() {
 
             console.log("Book added successfully:", data);
             setSuccess(true);
+			setShowNotification(true); 
             
             // Redirect after success
             setTimeout(() => {
@@ -191,6 +196,14 @@ export default function AddBook() {
     return (
         <div className="min-h-screen bg-gray-50 py-8">
             <div className="max-w-4xl mx-auto px-4">
+				
+				{showNotification && (
+                    <Notification 
+                        message="Book added successfully!" 
+                        onClose={() => setShowNotification(false)}
+                    />
+                )}
+				
                 {/* Header */}
                 <div className="mb-8">
                     <h1 className="text-3xl font-bold text-blue-900">Add Books to Your Library</h1>

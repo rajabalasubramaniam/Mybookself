@@ -101,15 +101,17 @@ export default function Statistics() {
       }
 
       setStats({
-        totalBooks,
-        finishedBooks,
-        totalPages,
-        pagesRead,
-        readingStreak: streak,
-        booksThisMonth,
-        genreDistribution: genreData,
-        monthlyProgress: monthlyData,
-        recentActivity: sessions.slice(0, 5)
+      totalBooks: books?.length || 0,
+      finishedBooks: books?.filter(b => b.status === 'finished').length || 0,
+      totalPages: books?.reduce((sum, b) => sum + (b.total_pages || 0), 0) || 0,
+      pagesRead: sessions?.reduce((sum, s) => sum + (s.pages_read || 0), 0) || 0,
+      minutesRead: sessions?.reduce((sum, s) => sum + (s.minutes_read || 0), 0) || 0,
+      readingStreak: streak || 0,
+      booksThisMonth: booksThisMonth || 0,
+      genreDistribution: genreData || [],
+      monthlyProgress: monthlyData || [],
+      recentActivity: sessions?.slice(0, 5) || [],
+      topGenre: Object.keys(genres || {}).sort((a,b) => genres[b] - genres[a])[0] || 'None'
       });
     } catch (error) {
       console.error('Error loading stats:', error);
@@ -121,9 +123,22 @@ export default function Statistics() {
   const COLORS = ['#1E3A8A', '#F59E0B', '#10B981', '#EF4444', '#8B5CF6'];
 
   if (loading) {
-    return <div className="text-center py-8">Loading statistics...</div>;
-  }
+        return (
+            <div className="text-center py-8">
+                <div className="inline-block animate-spin rounded-full h-8 w-8 border-4 border-blue-900 border-t-transparent"></div>
+                <p className="mt-2 text-gray-600">Loading statistics...</p>
+            </div>
+        );
+    }
 
+  if (!stats.pagesRead && stats.pagesRead !== 0) {
+        return (
+            <div className="text-center py-8 text-gray-500">
+                No statistics available yet. Start adding books and tracking your reading!
+            </div>
+        );
+    }
+	
   return (
     <div className="space-y-8">
       {/* Stats Cards */}
@@ -242,11 +257,12 @@ export default function Statistics() {
 }
 
 function StatCard({ title, value, icon, color }) {
+	const displayValue = value ?? 0;
   return (
     <div className={`${color} text-white p-4 rounded-xl shadow-lg`}>
       <div className="text-2xl mb-2">{icon}</div>
       <div className="text-sm opacity-90">{title}</div>
-      <div className="text-2xl font-bold">{value}</div>
+      <div className="text-2xl font-bold">{displayValue}</div>
     </div>
   );
 }
