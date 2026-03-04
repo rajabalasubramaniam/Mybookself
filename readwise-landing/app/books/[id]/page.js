@@ -12,6 +12,14 @@ export default function BookPage({ params }) {
     const router = useRouter();
     const supabase = createClient();
     const bookId = params.id;
+	const [isEditing, setIsEditing] = useState(false);
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+	const [editForm, setEditForm] = useState({
+		title: '',
+		author: '',
+		total_pages: '',
+		cover_url: ''
+	});
 
     useEffect(() => {
         loadBook();
@@ -223,6 +231,165 @@ export default function BookPage({ params }) {
         );
     }
 
+// Initialize edit form with current book data
+useEffect(() => {
+    if (book) {
+        setEditForm({
+            title: book.title || '',
+            author: book.author || '',
+            total_pages: book.total_pages || '',
+            cover_url: book.cover_url || ''
+        });
+    }
+}, [book]);
+
+const handleEditSubmit = async (e) => {
+    e.preventDefault();
+    
+    try {
+        const { error } = await supabase
+            .from('books')
+            .update({
+                title: editForm.title,
+                author: editForm.author,
+                total_pages: parseInt(editForm.total_pages) || null,
+                cover_url: editForm.cover_url,
+                updated_at: new Date().toISOString()
+            })
+            .eq('id', book.id);
+
+        if (error) throw error;
+
+        // Update local state
+        setBook({
+            ...book,
+            title: editForm.title,
+            author: editForm.author,
+            total_pages: parseInt(editForm.total_pages) || null,
+            cover_url: editForm.cover_url
+        });
+        
+        setIsEditing(false);
+        
+        // Show success message
+        alert('Book updated successfully!');
+    } catch (error) {
+        console.error('Error updating book:', error);
+        alert('Failed to update book. Please try again.');
+    }
+};
+
+const handleDelete = async () => {
+    try {
+        const { error } = await supabase
+            .from('books')
+            .delete()
+            .eq('id', book.id);
+
+        if (error) throw error;
+
+        router.push('/books?deleted=true');
+    } catch (error) {
+        console.error('Error deleting book:', error);
+        alert('Failed to delete book. Please try again.');
+    }
+};
+
+{/* Edit Modal */}
+{isEditing && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-blue-900 mb-4">Edit Book Details</h3>
+            
+            <form onSubmit={handleEditSubmit} className="space-y-4">
+                <div>
+                    <label className="block text-gray-700 mb-2">Title</label>
+                    <input
+                        type="text"
+                        value={editForm.title}
+                        onChange={(e) => setEditForm({...editForm, title: e.target.value})}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-900"
+                        required
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-gray-700 mb-2">Author</label>
+                    <input
+                        type="text"
+                        value={editForm.author}
+                        onChange={(e) => setEditForm({...editForm, author: e.target.value})}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-900"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-gray-700 mb-2">Total Pages</label>
+                    <input
+                        type="number"
+                        value={editForm.total_pages}
+                        onChange={(e) => setEditForm({...editForm, total_pages: e.target.value})}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-900"
+                    />
+                </div>
+
+                <div>
+                    <label className="block text-gray-700 mb-2">Cover URL</label>
+                    <input
+                        type="url"
+                        value={editForm.cover_url}
+                        onChange={(e) => setEditForm({...editForm, cover_url: e.target.value})}
+                        className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-900"
+                    />
+                </div>
+
+                <div className="flex space-x-4 pt-4">
+                    <button
+                        type="submit"
+                        className="flex-1 bg-blue-900 text-white py-2 rounded-lg hover:bg-blue-800"
+                    >
+                        Save Changes
+                    </button>
+                    <button
+                        type="button"
+                        onClick={() => setIsEditing(false)}
+                        className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
+                    >
+                        Cancel
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+)}
+
+{/* Delete Confirmation Modal */}
+{showDeleteConfirm && (
+    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+        <div className="bg-white rounded-xl p-6 max-w-md w-full">
+            <h3 className="text-xl font-bold text-red-600 mb-4">Delete Book?</h3>
+            <p className="text-gray-600 mb-6">
+                Are you sure you want to delete "{book.title}"? This action cannot be undone.
+            </p>
+            
+            <div className="flex space-x-4">
+                <button
+                    onClick={handleDelete}
+                    className="flex-1 bg-red-600 text-white py-2 rounded-lg hover:bg-red-700"
+                >
+                    Yes, Delete
+                </button>
+                <button
+                    onClick={() => setShowDeleteConfirm(false)}
+                    className="flex-1 bg-gray-500 text-white py-2 rounded-lg hover:bg-gray-600"
+                >
+                    Cancel
+                </button>
+            </div>
+        </div>
+    </div>
+)}
+
     if (error || !book) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -290,7 +457,22 @@ export default function BookPage({ params }) {
                                     <span className="text-gray-600">{book.total_pages} pages</span>
                                 )}
                             </div>
-
+							
+							<div className="flex justify-end space-x-2 mb-4">
+							<button
+							onClick={() => setIsEditing(true)}
+							className="bg-amber-500 text-white px-4 py-2 rounded-lg hover:bg-amber-600 transition flex items-center"
+							>
+							✏️ Edit
+							</button>
+							<button
+							onClick={() => setShowDeleteConfirm(true)}
+							className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600 transition flex items-center"
+							>
+							🗑️ Delete
+							</button>
+							</div>
+							
                             {book.total_pages > 0 && (
                                 <div className="mb-6">
                                     <div className="flex justify-between text-sm mb-1">
