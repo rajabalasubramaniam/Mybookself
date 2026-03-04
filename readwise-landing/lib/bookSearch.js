@@ -3,16 +3,7 @@ import axios from "axios";
 export async function searchBooksByISBN(isbn) {
     const errors = [];
     
-    // Try Google Books first (primary)
-    try {
-        const googleResult = await searchGoogleBooks(isbn);
-        if (googleResult) return { ...googleResult, source: 'Google Books' };
-    } catch (error) {
-        errors.push("Google Books: " + (error.response?.data?.error?.message || error.message));
-        console.log("Google Books failed:", error.message);
-    }
-
-    // Try Open Library second (backup)
+    // Try Open Library first (primary)
     try {
         const openLibResult = await searchOpenLibrary(isbn);
         if (openLibResult) return { ...openLibResult, source: 'Open Library' };
@@ -21,40 +12,23 @@ export async function searchBooksByISBN(isbn) {
         console.log("Open Library failed:", error.message);
     }
 
-    // Try Gutendex last (public domain)
+    // Try Gutendex as backup (public domain)
     try {
         const gutendexResult = await searchGutendex(isbn);
-        if (gutendexResult) return { ...gutendexResult, source: 'Gutendex' };
+        if (gutendexResult) return { ...gutendexResult, source: 'Gutendex (Public Domain)' };
     } catch (error) {
         errors.push("Gutendex: " + error.message);
         console.log("Gutendex failed:", error.message);
     }
+
+    // Only show error if ALL APIs failed
     throw new Error(`Could not find book. Tried: ${errors.join(" → ")}`);
-}
-
-async function searchGoogleBooks(isbn) {
-    const apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY;
-    const response = await axios.get(
-        `https://www.googleapis.com/books/v1/volumes?q=isbn:${isbn}&key=${apiKey}`
-    );
-
-    if (response.data.items?.[0]) {
-        const book = response.data.items[0].volumeInfo;
-        return {
-            title: book.title,
-            author: book.authors?.join(', '),
-            isbn: isbn,
-            cover_url: book.imageLinks?.thumbnail?.replace('http:', 'https:'),
-            total_pages: book.pageCount,
-            description: book.description,
-        };
-    }
-    return null;
 }
 
 async function searchOpenLibrary(isbn) {
     const response = await axios.get(
-        `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`
+        `https://openlibrary.org/api/books?bibkeys=ISBN:${isbn}&format=json&jscmd=data`,
+        { timeout: 5000 } // 5 second timeout
     );
 
     const bookData = response.data[`ISBN:${isbn}`];
@@ -65,7 +39,7 @@ async function searchOpenLibrary(isbn) {
             isbn: isbn,
             cover_url: bookData.cover?.large || bookData.cover?.medium,
             total_pages: bookData.number_of_pages,
-            description: bookData.notes || bookData.description || `A book by ${bookData.authors?.[0]?.name}`,
+            description: bookData.notes || bookData.description || `A book by ${bookData.authors?.[0]?.name || 'unknown author'}`,
         };
     }
     return null;
@@ -73,7 +47,8 @@ async function searchOpenLibrary(isbn) {
 
 async function searchGutendex(isbn) {
     const response = await axios.get(
-        `https://gutendex.com/books?search=${isbn}`
+        `https://gutendex.com/books?search=${isbn}`,
+        { timeout: 5000 }
     );
 
     if (response.data.results?.[0]) {
@@ -88,4 +63,30 @@ async function searchGutendex(isbn) {
         };
     }
     return null;
+}
+
+// Optional: Search by title/author for manual entry
+export async function searchBooksByTitle(query) {
+    try {
+        const response = await axios.get(
+            `https://openlibrary.org/search.json?q=${encodeURIComponent(query)}&limit=10`,
+            { timeout: 5000 }
+        );
+
+        if (response.data.docs) {
+            return response.data.docs.map(book => ({
+                title: book.title,
+                author: book.author_name?.join(', '),
+                isbn: book.isbn?.[0],
+                cover_url: book.cover_i ? `https://covers.openlibrary.org/b/id/${book.cover_i}-M.jpg` : null,
+                total_pages: book.number_of_pages_median,
+                first_publish_year: book.first_publish_year,
+                source: 'Open Library'
+            }));
+        }
+        return [];
+    } catch (error) {
+        console.error('Title search failed:', error);
+        return [];
+    }
 }
