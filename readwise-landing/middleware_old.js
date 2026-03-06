@@ -24,28 +24,7 @@ export async function middleware(request) {
 
         const { data: { user } } = await supabase.auth.getUser()
 
-        // ========== NEW: Admin route protection ==========
-        if (request.nextUrl.pathname.startsWith('/admin')) {
-            // If not logged in, redirect to login
-            if (!user) {
-                return NextResponse.redirect(new URL('/auth/login', request.url))
-            }
-
-            // Check if user is admin
-            const { data: profile } = await supabase
-                .from('profiles')
-                .select('is_admin')
-                .eq('id', user.id)
-                .single()
-
-            // If not admin, redirect to dashboard
-            if (!profile?.is_admin) {
-                return NextResponse.redirect(new URL('/dashboard', request.url))
-            }
-        }
-        // ========== End of admin protection ==========
-
-        // Your existing redirect logic
+        // Redirect logic
         if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
             return NextResponse.redirect(new URL('/auth/login', request.url))
         }
@@ -66,5 +45,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-    matcher: ['/dashboard/:path*', '/auth/:path*', '/profile/:path*', '/books/:path*', '/admin/:path*'], // Added admin to matcher
+    matcher: ['/dashboard/:path*', '/auth/:path*', '/profile/:path*', '/books/:path*'],
 }
