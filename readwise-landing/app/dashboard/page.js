@@ -119,6 +119,12 @@ export default function Dashboard() {
                           className="bg-white p-6 rounded-xl shadow hover:shadow-lg">
                         <h3 className="text-xl font-semibold text-blue-900">📚 View My Library</h3>
                     </Link>
+					
+					<Link href="/dashboard/my-reviews" 
+						  className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+						<h3 className="text-xl font-semibold text-blue-900 mb-2">⭐ My Reviews</h3>
+						<p className="text-gray-600">View and manage your book reviews</p>
+					</Link>
                 </div>
 				
 				{/* Statistics component */}

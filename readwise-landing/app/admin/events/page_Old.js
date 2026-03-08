@@ -3,7 +3,7 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../../lib/supabase/client";
 import Link from "next/link";
 
-export default function AdminEvents() {
+export default function EventsPage() {
     const [events, setEvents] = useState([]);
     const [loading, setLoading] = useState(true);
     const supabase = createClient();
@@ -56,7 +56,7 @@ export default function AdminEvents() {
         }
     };
 
-    if (loading) return <div className="text-center py-8">Loading...</div>;
+    if (loading) return <div>Loading...</div>;
 
     return (
         <div>

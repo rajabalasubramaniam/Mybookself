@@ -1,4 +1,5 @@
 "use client";
+import ReviewSection from "../../../components/ReviewSection";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -350,7 +351,7 @@ export default function BookPage({ params }) {
                                 </div>
                             )}
 
-                            {book.status === 'finished' ? (
+                                                       {book.status === 'finished' ? (
                                 <div className="mt-6 space-y-4">
                                     <div className="p-4 bg-green-100 text-green-800 rounded-lg text-center">
                                         🎉 Congratulations! You've finished this book!
@@ -370,6 +371,11 @@ export default function BookPage({ params }) {
                                     onFinish={markAsFinished}
                                 />
                             )}
+
+                            {/* Review Section - FIXED: Properly placed and closed */}
+                            <div className="mt-8">
+                                <ReviewSection bookId={book.id} />
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -494,7 +500,7 @@ export default function BookPage({ params }) {
     );
 }
 
-// Progress Form Component (kept at bottom)
+// Progress Form Component
 function ProgressForm({ book, onUpdate, onFinish }) {
     const [pagesRead, setPagesRead] = useState("");
     const [minutesRead, setMinutesRead] = useState("");
