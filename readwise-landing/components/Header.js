@@ -32,36 +32,40 @@ export default function Header() {
 
                 {/* Desktop Nav */}
                 <nav className="hidden md:flex items-center space-x-8">
-                    <a href="#features" className="hover:text-blue-900">Features</a>
-                    <a href="#how" className="hover:text-blue-900">How It Works</a>
-                    <a href="#pricing" className="hover:text-blue-900">Pricing</a>
-					
+					<Link href="/#features" className="hover:text-blue-900">Features</Link>
+					<Link href="/#how" className="hover:text-blue-900">How It Works</Link>
+					<Link href="/#pricing" className="hover:text-blue-900">Pricing</Link>
+    
 					<Link href="/books" className="hover:text-blue-900">📚 Library</Link>
 					<Link href="/books/scan" className="hover:text-blue-900">📷 Scan</Link>
 					<Link href="/books/export" className="hover:text-blue-900">📤 Export</Link>
-					<Link href="/dashboard" className="hover:text-blue-900">📊 Dashboard</Link>
-                    
-                    {user ? (
-                        <Link 
-                            href="/dashboard" 
-                            className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg"
-                        >
-                            Dashboard
-                        </Link>
-                    ) : (
-                        <>
-                            <Link href="/auth/login" className="text-blue-900 hover:underline">
-                                Login
-                            </Link>
-                            <Link 
-                                href="/auth/signup" 
-                                className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-lg"
-                            >
-                                Sign Up
-                            </Link>
-                        </>
-                    )}
-                </nav>
+    
+    
+					{!user && (
+						<Link href="/dashboard" className="hover:text-blue-900">📊 Dashboard</Link>
+					)}
+    
+					{user ? (
+						<Link 
+						href="/dashboard" 
+						className="bg-amber-500 hover:bg-amber-600 text-white px-6 py-2 rounded-lg"
+						>
+						Dashboard
+						</Link>
+					) : (
+					<>
+					<Link href="/auth/login" className="text-blue-900 hover:underline">
+						Login
+					</Link>
+					<Link 
+						href="/auth/signup" 
+						className="bg-blue-900 hover:bg-blue-800 text-white px-6 py-2 rounded-lg"
+					>
+						Sign Up
+					</Link>
+					</>
+					)}
+				</nav>
 
                 {/* Mobile Menu Button */}
                 <button

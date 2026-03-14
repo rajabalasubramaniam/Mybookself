@@ -20,9 +20,8 @@ export async function getHomepageData() {
         const [
             { data: events },
             { data: trending },
-            { data: recentReviews },
             { data: featuredBooks },
-            { data: booksForAuthors }  // Changed: fetch books first
+            { data: booksForAuthors }
         ] = await Promise.all([
             // Upcoming events
             supabase
@@ -44,18 +43,6 @@ export async function getHomepageData() {
                 .order('rank', { ascending: true })
                 .limit(10),
 
-            // Recent user reviews
-            supabase
-                .from('user_reviews')
-                .select(`
-                    *,
-                    user:profiles(username, full_name, avatar_url),
-                    book:books(title, author, cover_url)
-                `)
-                .eq('is_approved', true)
-                .order('created_at', { ascending: false })
-                .limit(6),
-
             // Featured/New releases
             supabase
                 .from('books')
@@ -63,14 +50,58 @@ export async function getHomepageData() {
                 .order('created_at', { ascending: false })
                 .limit(8),
 
-            // Get all books to calculate popular authors manually
+            // Get all books to calculate popular authors
             supabase
                 .from('books')
                 .select('author')
                 .not('author', 'is', null)
         ])
 
-        // Calculate popular authors manually (since .group() isn't available)
+        // FIXED: Fetch reviews separately with proper error handling
+        let recentReviews = [];
+        try {
+            // First get approved reviews
+            const { data: reviews, error: reviewsError } = await supabase
+                .from('user_reviews')
+                .select('*')
+                .eq('is_approved', true)
+                .order('created_at', { ascending: false })
+                .limit(6);
+
+            if (reviewsError) {
+                console.error('Error fetching reviews:', reviewsError);
+            } else if (reviews && reviews.length > 0) {
+                // Get user profiles for these reviews
+                const userIds = [...new Set(reviews.map(r => r.user_id))];
+                const { data: profiles } = await supabase
+                    .from('profiles')
+                    .select('id, full_name, username, avatar_url')
+                    .in('id', userIds);
+
+                // Get book details for these reviews
+                const bookIds = [...new Set(reviews.map(r => r.book_id))];
+                const { data: books } = await supabase
+                    .from('books')
+                    .select('id, title, author, cover_url')
+                    .in('id', bookIds);
+
+                // Combine the data
+                const profileMap = Object.fromEntries((profiles || []).map(p => [p.id, p]));
+                const bookMap = Object.fromEntries((books || []).map(b => [b.id, b]));
+
+                recentReviews = reviews.map(review => ({
+                    ...review,
+                    user: profileMap[review.user_id] || { 
+    full_name: 'Reader ' + review.user_id.substring(0, 4) // Shows "Reader a738"
+},
+                    book: bookMap[review.book_id] || { title: 'Unknown Book', author: '' }
+                }));
+            }
+        } catch (reviewError) {
+            console.error('Error processing reviews:', reviewError);
+        }
+
+        // Calculate popular authors manually
         const authorCount = {};
         (booksForAuthors || []).forEach(book => {
             if (book.author) {
@@ -82,7 +113,7 @@ export async function getHomepageData() {
         const popularAuthors = Object.entries(authorCount)
             .map(([author, count]) => ({ author, count }))
             .sort((a, b) => b.count - a.count)
-            .slice(0, 6); // Take top 6
+            .slice(0, 6);
 
         return {
             events: events || [],
@@ -92,7 +123,7 @@ export async function getHomepageData() {
             popularAuthors: popularAuthors || []
         }
     } catch (error) {
-        console.error('Error fetching homepage data:', error)
+        console.error('Error fetching homepage data:', error);
         return {
             events: [],
             trending: [],

@@ -48,7 +48,7 @@ export default function AdminDashboard() {
         }
     };
 
-    const statCards = [
+	const statCards = [
         { title: "Total Books", value: stats.totalBooks, icon: "📚", color: "bg-blue-500", link: "/admin/books" },
         { title: "Total Users", value: stats.totalUsers, icon: "👥", color: "bg-green-500", link: "/admin/users" },
         { title: "Events", value: stats.totalEvents, icon: "📅", color: "bg-purple-500", link: "/admin/events" },
@@ -75,8 +75,8 @@ export default function AdminDashboard() {
                     </Link>
                 ))}
             </div>
-
-            {/* Recent Activity */}
+	
+		    {/* Recent Activity */}
             <div className="bg-white rounded-xl shadow p-6">
                 <h2 className="text-xl font-bold text-gray-800 mb-4">Quick Actions</h2>
                 <div className="grid md:grid-cols-2 gap-4">
