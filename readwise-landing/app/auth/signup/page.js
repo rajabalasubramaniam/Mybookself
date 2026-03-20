@@ -35,15 +35,16 @@ export default function SignUp() {
                     full_name: fullName,
                     role: role,           // pass role to metadata
                 },
-                emailRedirectTo: `${window.location.origin}/auth/callback`,
+                // emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
         });
 
         if (error) {
             setError(error.message);
+			setLoading(false);
         } else {
-            setSuccess(true);
-            // Optionally redirect to a "check your email" page
+            // Redirect based on role immediately
+    router.push(`/profile/${role}/edit`);
         }
         setLoading(false);
     };

@@ -26,7 +26,34 @@ export async function GET(request) {
             }
         )
         await supabase.auth.exchangeCodeForSession(code)
-    }
+		
+		// Get the user's role
+		const { data: { user } } = await supabase.auth.getUser()
+		if (user) {
+		const { data: profile } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single()
+		
+		// Redirect based on role
+      if (profile?.role === 'writer') {
+        return NextResponse.redirect(new URL('/profile/writer/edit', request.url))
+      } else if (profile?.role === 'publisher') {
+        return NextResponse.redirect(new URL('/profile/publisher/edit', request.url))
+      } else {
+        return NextResponse.redirect(new URL('/profile/reader/edit', request.url))
+      }
+		}
+		}
+		
+		// after successful signup (in handleSignUp)
+		if (!error) {
+		// fetch user role from metadata or response
+		const role = user?.user_metadata?.role || 'reader';
+		router.push(`/profile/${role}/edit`);
+		}
 
-    return NextResponse.redirect(requestUrl.origin)
-}
+     // Fallback to dashboard
+	return NextResponse.redirect(new URL('/dashboard', request.url))
+	}
