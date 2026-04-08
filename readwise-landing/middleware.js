@@ -44,6 +44,37 @@ export async function middleware(request) {
                 return NextResponse.redirect(new URL('/dashboard', request.url))
             }
         }
+		
+		// Writer routes protection
+			if (request.nextUrl.pathname.startsWith('/writer')) {
+				if (!user) {
+				return NextResponse.redirect(new URL('/auth/login', request.url));
+			}
+			const { data: profile } = await supabase
+				.from('profiles')
+				.select('role')
+				.eq('id', user.id)
+				.single();
+			if (profile?.role !== 'writer') {
+			return NextResponse.redirect(new URL('/dashboard', request.url));
+			}
+			}
+
+		// Publisher routes protection
+			if (request.nextUrl.pathname.startsWith('/publisher')) {
+			if (!user) {
+			return NextResponse.redirect(new URL('/auth/login', request.url));
+			}
+			const { data: profile } = await supabase
+			.from('profiles')
+			.select('role')
+			.eq('id', user.id)
+			.single();
+			if (profile?.role !== 'publisher') {
+			return NextResponse.redirect(new URL('/dashboard', request.url));
+			}
+			}
+		
         // ========== End of admin protection ==========
 
         // Your existing redirect logic
@@ -67,5 +98,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-    matcher: ['/dashboard/:path*', '/auth/:path*', '/profile/:path*', '/books/:path*', '/admin/:path*'], // Added admin to matcher
-}
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/profile/:path*', '/books/:path*', '/writer/:path*', '/publisher/:path*'],
+};

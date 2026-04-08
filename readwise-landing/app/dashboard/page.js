@@ -125,6 +125,32 @@ export default function Dashboard() {
 						<h3 className="text-xl font-semibold text-blue-900 mb-2">⭐ My Reviews</h3>
 						<p className="text-gray-600">View and manage your book reviews</p>
 					</Link>
+					<Link href="/dashboard/statistics" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+						<h3 className="text-xl font-semibold text-blue-900 mb-2">📊 My Statistics</h3>
+						<p className="text-gray-600">Discover your reading patterns and favorite genres</p>
+						</Link>
+					<Link href="/dashboard/recommendations" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+						<h3 className="text-xl font-semibold text-blue-900 mb-2">📖 Recommendations</h3>
+						<p className="text-gray-600">Discover books you'll love</p>
+					</Link>
+					<Link href={`/profile/${user.id}`} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+							<h3 className="text-xl font-semibold text-blue-900 mb-2">👤 My Profile</h3>
+						<p className="text-gray-600">View your public profile</p>
+					</Link>
+					
+					{profile.role === 'writer' && (
+					<Link href="/writer/books" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+					<h3 className="text-xl font-semibold text-blue-900 mb-2">✍️ My Books</h3>
+					<p className="text-gray-600">Manage your written books</p>
+					</Link>
+					)}
+
+					{profile.role === 'publisher' && (
+					<Link href="/publisher/inventory" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+					<h3 className="text-xl font-semibold text-blue-900 mb-2">📦 Inventory</h3>
+					<p className="text-gray-600">Manage your stock and prices</p>
+					</Link>
+					)}
                 </div>
 				
 				{/* Statistics component */}

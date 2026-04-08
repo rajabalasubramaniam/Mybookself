@@ -2,6 +2,7 @@ import "./../styles/globals.css";
 import { Inter } from "next/font/google";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import { Suspense } from 'react'
+import Breadcrumbs from "../components/Breadcrumbs";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -22,6 +23,7 @@ export default function RootLayout({ children }) {
             <div className="animate-spin rounded-full h-12 w-12 border-4 border-blue-900 border-t-transparent"></div>
           </div>
         }>
+		<Breadcrumbs />
 		  {children}
 		</Suspense>  
 		<GoogleAnalytics />

@@ -12,10 +12,45 @@ export default function NewInventoryItem() {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const supabase = createClient();
+  const [showNewBookModal, setShowNewBookModal] = useState(false);
+  const [newBookTitle, setNewBookTitle] = useState("");
+  const [newBookAuthor, setNewBookAuthor] = useState("");
+  const [newBookCover, setNewBookCover] = useState("");
+  const [addingBook, setAddingBook] = useState(false);
 
   useEffect(() => {
     fetchBooks();
   }, []);
+
+  const createNewBook = async () => {
+  setAddingBook(true);
+  const { data: { user } } = await supabase.auth.getUser();
+  const { data: newBook, error } = await supabase
+    .from('books')
+    .insert({
+      title: newBookTitle,
+      author: newBookAuthor,
+      cover_url: newBookCover,
+      user_id: user.id, // creator (publisher)
+      status: 'unread',
+    })
+    .select()
+    .single();
+
+  if (error) {
+    alert('Error creating book');
+  } else {
+    // Add to books list and select it
+    setBooks([...books, newBook]);
+    setBookId(newBook.id);
+    setShowNewBookModal(false);
+    // reset form
+    setNewBookTitle("");
+    setNewBookAuthor("");
+    setNewBookCover("");
+  }
+  setAddingBook(false);
+};
 
   const fetchBooks = async () => {
     const { data } = await supabase
