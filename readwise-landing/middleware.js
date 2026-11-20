@@ -24,6 +24,27 @@ export async function middleware(request) {
         )
 
         const { data: { user } } = await supabase.auth.getUser()
+		
+		// Check for unapproved users on protected routes
+		if (user) {
+			const { data: profile } = await supabase
+				.from('profiles')
+				.select('is_approved, is_banned')
+				.eq('id', user.id)
+				.single()
+
+			// Block banned users
+			if (profile?.is_banned) {
+				await supabase.auth.signOut()
+				return NextResponse.redirect(new URL('/auth/login?error=banned', request.url))
+			}
+
+			// Block unapproved users (allow them to access auth pages to logout)
+			if (!profile?.is_approved && !request.nextUrl.pathname.startsWith('/auth')) {
+				// If they try to access the app, send them to a "pending approval" page
+				return NextResponse.redirect(new URL('/auth/pending-approval', request.url))
+			}
+		}
 
         // ========== NEW: Admin route protection ==========
         if (request.nextUrl.pathname.startsWith('/admin')) {

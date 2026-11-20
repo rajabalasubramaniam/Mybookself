@@ -4,6 +4,7 @@ import Link from "next/link";
 import { createClient } from "../lib/supabase/client";
 import { Suspense } from 'react';
 import SearchParamsHandler from '../app/components/SearchParamsHandler';
+import NotificationBell from "./NotificationBell";
 
 export default function Header() {
     const [open, setOpen] = useState(false);
@@ -55,7 +56,9 @@ export default function Header() {
 							<Link href="/dashboard/recommendations" className="hover:text-blue-900">Recommendations</Link>
                         </>
                     )}
-
+					{user && (
+							<NotificationBell />
+					)}
                     {/* Role-specific links */}
                     {profile?.role === 'writer' && (
                         <Link href="/writer/books" className="hover:text-blue-900">✍️ My Books</Link>

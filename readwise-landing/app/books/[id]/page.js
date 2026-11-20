@@ -1,12 +1,11 @@
 "use client";
-import ReviewSection from "../../../components/ReviewSection";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../../lib/supabase/client";
 
 export default function BookPage({ params }) {
-    // ========== 1. ALL useState HOOKS FIRST ==========
+    // ========== ALL useState HOOKS ==========
     const [book, setBook] = useState(null);
     const [sessions, setSessions] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -20,16 +19,21 @@ export default function BookPage({ params }) {
         cover_url: ''
     });
     
+    // 🆕 NEW: Writing Discovery States
+    const [showWritingModal, setShowWritingModal] = useState(false);
+    const [postTitle, setPostTitle] = useState("");
+    const [postContent, setPostContent] = useState("");
+    const [savingPost, setSavingPost] = useState(false);
+    
     const router = useRouter();
     const supabase = createClient();
     const bookId = params.id;
 
-    // ========== 2. ALL useEffect HOOKS NEXT ==========
+    // ========== ALL useEffect HOOKS ==========
     useEffect(() => {
         loadBook();
     }, [bookId]);
 
-    // This useEffect initializes the edit form when book loads
     useEffect(() => {
         if (book) {
             setEditForm({
@@ -41,7 +45,7 @@ export default function BookPage({ params }) {
         }
     }, [book]);
 
-    // ========== 3. ALL FUNCTIONS ==========
+    // ========== ALL FUNCTIONS ==========
     const loadBook = async () => {
         try {
             setLoading(true);
@@ -95,6 +99,7 @@ export default function BookPage({ params }) {
                 .update({
                     current_page: newPageCount,
                     status: newStatus,
+                    reading_status: newStatus === 'finished' ? 'finished' : 'currently_reading',
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', book.id);
@@ -134,6 +139,8 @@ export default function BookPage({ params }) {
                 .update({
                     current_page: book.total_pages,
                     status: 'finished',
+                    reading_status: 'finished',
+                    finished_reading_at: new Date().toISOString(),
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', book.id);
@@ -151,6 +158,34 @@ export default function BookPage({ params }) {
             setBook({ ...book, current_page: book.total_pages, status: 'finished' });
         } catch (err) {
             setError(err.message);
+        }
+    };
+
+    // 🆕 NEW: Save Writing Post Function
+    const handleSavePost = async (e) => {
+        e.preventDefault();
+        setSavingPost(true);
+        try {
+            const { data: { user } } = await supabase.auth.getUser();
+            const { error } = await supabase
+                .from('user_posts')
+                .insert({
+                    user_id: user.id,
+                    book_id: book.id,
+                    title: postTitle,
+                    content: postContent,
+                    is_published: false
+                });
+            if (error) throw error;
+            setShowWritingModal(false);
+            setPostTitle("");
+            setPostContent("");
+            alert("✨ Your writing has been saved! You can publish it later from your dashboard.");
+        } catch (error) {
+            console.error('Error saving post:', error);
+            alert("Failed to save your writing");
+        } finally {
+            setSavingPost(false);
         }
     };
 
@@ -237,7 +272,7 @@ export default function BookPage({ params }) {
         }
     };
 
-    // ========== 4. CONDITIONAL RETURNS ==========
+    // ========== CONDITIONAL RETURNS ==========
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -266,7 +301,7 @@ export default function BookPage({ params }) {
         ? Math.round(((book.current_page || 0) / book.total_pages) * 100) 
         : 0;
 
-    // ========== 5. MAIN RENDER ==========
+    // ========== MAIN RENDER ==========
     return (
         <div className="min-h-screen bg-gray-50">
             <nav className="bg-white shadow-sm">
@@ -351,7 +386,7 @@ export default function BookPage({ params }) {
                                 </div>
                             )}
 
-                                                       {book.status === 'finished' ? (
+                            {book.status === 'finished' ? (
                                 <div className="mt-6 space-y-4">
                                     <div className="p-4 bg-green-100 text-green-800 rounded-lg text-center">
                                         🎉 Congratulations! You've finished this book!
@@ -363,6 +398,21 @@ export default function BookPage({ params }) {
                                         <span>📤</span>
                                         <span>Share Achievement</span>
                                     </button>
+
+                                    {/* 🆕 NEW: Writing Prompt Section - Appears only when book is finished */}
+                                    <div className="mt-4 p-6 bg-gradient-to-r from-purple-50 to-pink-50 rounded-xl">
+                                        <h3 className="text-xl font-bold text-purple-900 mb-2">✍️ Discover Your Writing Voice</h3>
+                                        <p className="text-gray-700 mb-4">
+                                            Writing about what you read helps develop your own style. 
+                                            Would you like to write a short essay or review about this book?
+                                        </p>
+                                        <button
+                                            onClick={() => setShowWritingModal(true)}
+                                            className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700 transition"
+                                        >
+                                            Start Writing
+                                        </button>
+                                    </div>
                                 </div>
                             ) : (
                                 <ProgressForm 
@@ -371,11 +421,6 @@ export default function BookPage({ params }) {
                                     onFinish={markAsFinished}
                                 />
                             )}
-
-                            {/* Review Section - FIXED: Properly placed and closed */}
-                            <div className="mt-8">
-                                <ReviewSection bookId={book.id} />
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -493,6 +538,55 @@ export default function BookPage({ params }) {
                                 Cancel
                             </button>
                         </div>
+                    </div>
+                </div>
+            )}
+
+            {/* 🆕 NEW: Writing Modal - Appears after clicking "Start Writing" */}
+            {showWritingModal && (
+                <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+                    <div className="bg-white rounded-xl p-6 max-w-2xl w-full max-h-[80vh] overflow-y-auto">
+                        <h2 className="text-2xl font-bold text-purple-900 mb-4">Write About "{book.title}"</h2>
+                        <form onSubmit={handleSavePost}>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">Post Title</label>
+                                <input
+                                    type="text"
+                                    value={postTitle}
+                                    onChange={(e) => setPostTitle(e.target.value)}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-900"
+                                    placeholder="e.g., Why I Loved This Book"
+                                    required
+                                />
+                            </div>
+                            <div className="mb-4">
+                                <label className="block text-gray-700 mb-2">Your Writing</label>
+                                <textarea
+                                    value={postContent}
+                                    onChange={(e) => setPostContent(e.target.value)}
+                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-purple-900"
+                                    rows="10"
+                                    placeholder="Share your thoughts, analysis, or personal reflection..."
+                                    required
+                                />
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    type="submit"
+                                    disabled={savingPost}
+                                    className="bg-purple-600 text-white px-6 py-2 rounded-lg hover:bg-purple-700"
+                                >
+                                    {savingPost ? "Saving..." : "Save Post"}
+                                </button>
+                                <button
+                                    type="button"
+                                    onClick={() => setShowWritingModal(false)}
+                                    className="bg-gray-500 text-white px-6 py-2 rounded-lg hover:bg-gray-600"
+                                >
+                                    Cancel
+                                </button>
+                            </div>
+                        </form>
                     </div>
                 </div>
             )}

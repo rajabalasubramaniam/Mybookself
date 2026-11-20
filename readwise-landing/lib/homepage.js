@@ -46,7 +46,7 @@ export async function getHomepageData() {
             // Featured/New releases
             supabase
                 .from('books')
-                .select('*')
+                .select('id, title, author, cover_url, created_at')
                 .order('created_at', { ascending: false })
                 .limit(8),
 

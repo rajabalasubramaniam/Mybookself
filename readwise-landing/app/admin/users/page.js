@@ -127,18 +127,92 @@ export default function AdminUsers() {
         }
     };
 
-    const handleDelete = async (userId) => {
-        if (!confirm('⚠️ This will permanently delete ALL user data (books, reviews, etc.). Are you absolutely sure?')) return;
-        try {
-            // Because of cascade constraints, deleting the auth user removes everything
-            await supabase.auth.admin.deleteUser(userId); // Note: requires service_role key – see note below
-            loadUsers();
-            loadStats();
-        } catch (err) {
-            alert('Failed to delete user. You may need to use a server-side admin API.');
-        }
-    };
+const deleteUser = async (userId) => {
+    if (!confirm('⚠️ WARNING: This will PERMANENTLY delete all user data. This action CANNOT be undone!\n\nAre you absolutely sure?')) return;
 
+    try {
+        // First, delete all related data from child tables
+        console.log('Deleting user activity logs...');
+        await supabase.from('user_activity_logs').delete().eq('user_id', userId);
+        
+        console.log('Deleting user posts...');
+        await supabase.from('user_posts').delete().eq('user_id', userId);
+        
+        console.log('Deleting notifications...');
+        await supabase.from('notifications').delete().eq('user_id', userId);
+        
+        console.log('Deleting reading sessions...');
+        await supabase.from('reading_sessions').delete().eq('user_id', userId);
+        
+        console.log('Deleting user reviews...');
+        await supabase.from('user_reviews').delete().eq('user_id', userId);
+        
+        console.log('Deleting books...');
+        await supabase.from('books').delete().eq('user_id', userId);
+        
+        console.log('Deleting writer books...');
+        await supabase.from('writer_books').delete().eq('writer_id', userId);
+        
+        console.log('Deleting publisher inventory...');
+        await supabase.from('publisher_inventory').delete().eq('publisher_id', userId);
+        
+        console.log('Deleting writer profile...');
+        await supabase.from('writer_profiles').delete().eq('id', userId);
+        
+        console.log('Deleting publisher profile...');
+        await supabase.from('publisher_profiles').delete().eq('id', userId);
+        
+        console.log('Deleting main profile...');
+        await supabase.from('profiles').delete().eq('id', userId);
+        
+        // Now call the server API to delete from auth.users
+        console.log('Calling server API to delete auth user...');
+        const response = await fetch('/api/admin/delete-user', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ userId })
+        });
+        
+		
+		const approveUser = async (userId) => {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_approved: true })
+            .eq('id', userId);
+        if (error) throw error;
+        loadUsers(); // refresh the list
+    } catch (error) {
+        alert('Failed to approve user');
+    }
+};
+        const result = await response.json();
+        
+        if (!response.ok) {
+            throw new Error(result.error || 'Failed to delete auth user');
+        }
+        
+        alert('User deleted successfully!');
+        loadUsers(); // Refresh the user list
+        loadStats(); // Refresh stats
+        
+    } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Failed to delete user: ' + error.message);
+    }
+};
+const approveUser = async (userId) => {
+    try {
+        const { error } = await supabase
+            .from('profiles')
+            .update({ is_approved: true })
+            .eq('id', userId);
+        if (error) throw error;
+        loadUsers(); // refresh the list
+    } catch (error) {
+        alert('Failed to approve user');
+    }
+};
     // Filter users
     const filtered = users.filter(u => {
         const matchesSearch = 
@@ -249,11 +323,22 @@ export default function AdminUsers() {
                                             <span className="bg-red-100 text-red-800 px-2 py-0.5 rounded-full text-xs">Banned</span> :
                                             <span className="bg-green-100 text-green-800 px-2 py-0.5 rounded-full text-xs">Active</span>
                                         }
+										{!user.is_approved && (
+											<span className="bg-yellow-100 text-yellow-800 px-2 py-0.5 rounded-full text-xs">Unapproved</span>
+										)}
                                     </div>
                                 </td>
+								
                                 <td className="px-6 py-4 text-center">
                                     <div className="flex justify-center gap-2">
-                                        <button
+                                        {!user.is_approved && (
+										<button
+											onClick={() => approveUser(user.id)}
+											className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
+											title="Approve user"
+										>Approve</button>
+										)}
+										<button
                                             onClick={() => { setSelectedUser(user); setShowEditModal(true); }}
                                             className="text-blue-600 hover:text-blue-800"
                                             title="Edit"
@@ -270,7 +355,7 @@ export default function AdminUsers() {
 											title="Activity Logs"
 										>📋</button>
                                         <button
-                                            onClick={() => handleDelete(user.id)}
+                                            onClick={() => deleteUser(user.id)}
                                             className="text-red-600 hover:text-red-800"
                                             title="Delete"
                                         >🗑️</button>

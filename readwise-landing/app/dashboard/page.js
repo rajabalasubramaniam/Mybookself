@@ -133,6 +133,15 @@ export default function Dashboard() {
 						<h3 className="text-xl font-semibold text-blue-900 mb-2">📖 Recommendations</h3>
 						<p className="text-gray-600">Discover books you'll love</p>
 					</Link>
+					<Link href="/dashboard/writings" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+						<h3 className="text-xl font-semibold text-blue-900 mb-2">✍️ My Writings</h3>
+						<p className="text-gray-600">Long-form essays and personal reflections</p>
+					</Link>
+
+					<Link href="/dashboard/my-reviews" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
+						<h3 className="text-xl font-semibold text-blue-900 mb-2">⭐ My Reviews</h3>
+						<p className="text-gray-600">Short public reviews and ratings</p>
+					</Link>
 					<Link href={`/profile/${user.id}`} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
 							<h3 className="text-xl font-semibold text-blue-900 mb-2">👤 My Profile</h3>
 						<p className="text-gray-600">View your public profile</p>

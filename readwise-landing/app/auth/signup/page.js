@@ -8,21 +8,39 @@ export default function SignUp() {
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [fullName, setFullName] = useState("");
-    const [role, setRole] = useState("reader"); // default role
+    const [role, setRole] = useState("reader");
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const router = useRouter();
     const supabase = createClient();
 
+    // Email validation function
+    const isValidEmail = (email) => {
+        const disposableDomains = [
+            'mailinator.com', 'guerrillamail.com', '10minutemail.com',
+            'temp-mail.org', 'throwawaymail.com', 'tempmail.com',
+            'fakeinbox.com', 'getnada.com', 'yopmail.com',
+            'mailnator.com', 'maildrop.cc'
+        ];
+        
+        const domain = email.split('@')[1];
+        if (disposableDomains.includes(domain)) {
+            return false;
+        }
+        
+        const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+        return emailRegex.test(email);
+    };
+
     const handleSignUp = async (e) => {
         e.preventDefault();
         setLoading(true);
         setError(null);
 
-        // Basic email validation (you can enhance with regex)
-        if (!email.includes('@') || !email.includes('.')) {
-            setError("Please enter a valid email address.");
+        // Validate email
+        if (!isValidEmail(email)) {
+            setError("Please use a valid email address. Temporary/disposable emails are not allowed.");
             setLoading(false);
             return;
         }
@@ -33,27 +51,28 @@ export default function SignUp() {
             options: {
                 data: {
                     full_name: fullName,
-                    role: role,           // pass role to metadata
+                    role: role,
                 },
-                // emailRedirectTo: `${window.location.origin}/auth/callback`,
+                emailRedirectTo: `${window.location.origin}/auth/callback`,
             },
         });
 
         if (error) {
             setError(error.message);
-			setLoading(false);
+            setLoading(false);
         } else {
-            // Redirect based on role immediately
-    router.push(`/profile/${role}/edit`);
+            setSuccess(true);
+            // Don't redirect immediately - let user see success message
+            // They will be redirected after email confirmation or stay on page
+            setLoading(false);
         }
-        setLoading(false);
     };
 
     if (success) {
         return (
             <div className="min-h-screen flex items-center justify-center">
                 <div className="text-center p-8 bg-white rounded-xl shadow max-w-md">
-                    <h2 className="text-2xl font-bold text-green-600 mb-4">Verify your email</h2>
+                    <h2 className="text-2xl font-bold text-green-600 mb-4">Check your email!</h2>
                     <p className="text-gray-600">
                         We've sent a confirmation link to <strong>{email}</strong>. 
                         Please check your inbox and click the link to activate your account.

@@ -81,38 +81,22 @@ export default async function Home() {
                             <div className="mt-8">
                                 <h3 className="text-2xl font-bold text-blue-900 mb-6">📚 New Releases</h3>
                                 <div className="grid md:grid-cols-2 gap-4">
-                                    {featuredBooks.map((book) => (
-                                        <Link 
-                                            key={book.id}
-                                            href={`/books/${book.id}`}
-                                            className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition flex gap-4"
-                                        >
-                                            {book.cover_url ? (
-                                                <img 
-                                                    src={book.cover_url} 
-                                                    alt={book.title}
-                                                    className="w-16 h-20 object-cover rounded"
-                                                />
-                                            ) : (
-                                                <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center">
-                                                    <span className="text-gray-400 text-xs">No cover</span>
-                                                </div>
-                                            )}
-                                            <div>
-                                                <h4 className="font-semibold text-blue-900 line-clamp-2">
-                                                    {book.title}
-                                                </h4>
-                                                <p className="text-sm text-gray-600">{book.author || 'Unknown'}</p>
-                                                <span className={`inline-block mt-2 text-xs px-2 py-1 rounded-full ${
-                                                    book.status === 'finished' ? 'bg-green-100 text-green-800' :
-                                                    book.status === 'reading' ? 'bg-blue-100 text-blue-800' :
-                                                    'bg-gray-100 text-gray-800'
-                                                }`}>
-                                                    {book.status}
-                                                </span>
-                                            </div>
-                                        </Link>
-                                    ))}
+{featuredBooks.map((book) => (
+    <Link key={book.id} href={`/books/${book.id}`} className="bg-white p-4 rounded-xl shadow hover:shadow-lg transition flex gap-4">
+        {book.cover_url ? (
+            <img src={book.cover_url} alt={book.title} className="w-16 h-20 object-cover rounded" />
+        ) : (
+            <div className="w-16 h-20 bg-gray-200 rounded flex items-center justify-center">
+                <span className="text-gray-400 text-xs">No cover</span>
+            </div>
+        )}
+        <div>
+            <h4 className="font-semibold text-blue-900 line-clamp-2">{book.title}</h4>
+            <p className="text-sm text-gray-600">{book.author || 'Unknown'}</p>
+            {/* Remove the status badge for guests */}
+        </div>
+    </Link>
+))}
                                 </div>
                             </div>
                         </div>
