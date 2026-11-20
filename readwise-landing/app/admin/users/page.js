@@ -131,40 +131,7 @@ const deleteUser = async (userId) => {
     if (!confirm('⚠️ WARNING: This will PERMANENTLY delete all user data. This action CANNOT be undone!\n\nAre you absolutely sure?')) return;
 
     try {
-        // First, delete all related data from child tables
-        console.log('Deleting user activity logs...');
-        await supabase.from('user_activity_logs').delete().eq('user_id', userId);
-        
-        console.log('Deleting user posts...');
-        await supabase.from('user_posts').delete().eq('user_id', userId);
-        
-        console.log('Deleting notifications...');
-        await supabase.from('notifications').delete().eq('user_id', userId);
-        
-        console.log('Deleting reading sessions...');
-        await supabase.from('reading_sessions').delete().eq('user_id', userId);
-        
-        console.log('Deleting user reviews...');
-        await supabase.from('user_reviews').delete().eq('user_id', userId);
-        
-        console.log('Deleting books...');
-        await supabase.from('books').delete().eq('user_id', userId);
-        
-        console.log('Deleting writer books...');
-        await supabase.from('writer_books').delete().eq('writer_id', userId);
-        
-        console.log('Deleting publisher inventory...');
-        await supabase.from('publisher_inventory').delete().eq('publisher_id', userId);
-        
-        console.log('Deleting writer profile...');
-        await supabase.from('writer_profiles').delete().eq('id', userId);
-        
-        console.log('Deleting publisher profile...');
-        await supabase.from('publisher_profiles').delete().eq('id', userId);
-        
-        console.log('Deleting main profile...');
-        await supabase.from('profiles').delete().eq('id', userId);
-        
+        // All cleanup happens securely on the server
         // Now call the server API to delete from auth.users
         console.log('Calling server API to delete auth user...');
         const response = await fetch('/api/admin/delete-user', {
@@ -172,20 +139,6 @@ const deleteUser = async (userId) => {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ userId })
         });
-        
-		
-		const approveUser = async (userId) => {
-    try {
-        const { error } = await supabase
-            .from('profiles')
-            .update({ is_approved: true })
-            .eq('id', userId);
-        if (error) throw error;
-        loadUsers(); // refresh the list
-    } catch (error) {
-        alert('Failed to approve user');
-    }
-};
         const result = await response.json();
         
         if (!response.ok) {

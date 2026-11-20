@@ -59,17 +59,44 @@ export default function AddBook() {
         setSearchResults([]);
         
         try {
-            const apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY;
-            let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=20`;
-            if (apiKey) url += `&key=${apiKey}`;
-            
-            const response = await axios.get(url);
-            
-            if (response.data.items && response.data.items.length > 0) {
-                const books = response.data.items.map(item => {
+            let books = [];
+            try {
+                // Primary: Open Library (free, no key needed)
+                const response = await axios.get(
+                    "https://openlibrary.org/search.json",
+                    {
+                        params: {
+                            q: searchQuery.trim(),
+                            limit: 20,
+                            fields: "key,title,author_name,number_of_pages_median,isbn,cover_i,subject",
+                        },
+                        timeout: 10000,
+                    }
+                );
+                books = (response.data.docs || []).map(doc => {
+                    const isbn13 = (doc.isbn || []).find(i => i.length === 13) || doc.isbn?.[0];
+                    const subjects = (doc.subject || []).map(s => s.toLowerCase());
+                    const genre = genres.find(g => subjects.some(s => s.includes(g.toLowerCase()))) || "";
+                    return {
+                        id: doc.key,
+                        title: doc.title || "Unknown Title",
+                        authors: doc.author_name || ["Unknown Author"],
+                        pageCount: doc.number_of_pages_median || 0,
+                        coverUrl: doc.cover_i ? `https://covers.openlibrary.org/b/id/${doc.cover_i}-M.jpg` : null,
+                        isbn: isbn13,
+                        genre,
+                    };
+                });
+            } catch (olErr) {
+                console.log("Open Library failed, trying Google Books:", olErr.message);
+                // Backup: Google Books
+                const apiKey = process.env.NEXT_PUBLIC_GOOGLE_BOOKS_API_KEY;
+                let url = `https://www.googleapis.com/books/v1/volumes?q=${encodeURIComponent(searchQuery)}&maxResults=20`;
+                if (apiKey) url += `&key=${apiKey}`;
+                const response = await axios.get(url);
+                books = (response.data.items || []).map(item => {
                     const volumeInfo = item.volumeInfo || {};
                     const imageLinks = volumeInfo.imageLinks || {};
-                    
                     return {
                         id: item.id,
                         title: volumeInfo.title || "Unknown Title",
@@ -77,9 +104,12 @@ export default function AddBook() {
                         pageCount: volumeInfo.pageCount || 0,
                         coverUrl: imageLinks.thumbnail?.replace('http:', 'https:') || null,
                         isbn: volumeInfo.industryIdentifiers?.find(id => id.type === "ISBN_13")?.identifier,
-                        genre: volumeInfo.categories?.[0] || "",  // auto-detect genre from Google Books
+                        genre: volumeInfo.categories?.[0] || "",
                     };
                 });
+            }
+
+            if (books.length > 0) {
                 setSearchResults(books);
             } else {
                 setSearchResults([]);

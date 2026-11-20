@@ -36,7 +36,35 @@ export async function POST(request) {
             return NextResponse.json({ error: 'Admin access required' }, { status: 403 })
         }
 
-        // 2. Delete user using the admin client (service_role key)
+        if (userId === user.id) {
+            return NextResponse.json({ error: 'You cannot delete your own admin account' }, { status: 400 })
+        }
+
+        // 2. Remove the user's data with the admin client (bypasses RLS)
+        const cleanup = [
+            ['user_activity_logs', 'user_id'],
+            ['user_posts', 'user_id'],
+            ['notifications', 'user_id'],
+            ['reading_sessions', 'user_id'],
+            ['user_reviews', 'user_id'],
+            ['goals', 'user_id'],
+            ['achievements', 'user_id'],
+            ['user_challenges', 'user_id'],
+            ['shares', 'user_id'],
+            ['book_exchanges', 'offering_user_id'],
+            ['books', 'user_id'],
+            ['writer_books', 'writer_id'],
+            ['publisher_inventory', 'publisher_id'],
+            ['writer_profiles', 'id'],
+            ['publisher_profiles', 'id'],
+            ['profiles', 'id'],
+        ]
+        for (const [table, column] of cleanup) {
+            const { error: delErr } = await supabaseAdmin.from(table).delete().eq(column, userId)
+            if (delErr) console.error(`Cleanup ${table}.${column}:`, delErr.message)
+        }
+
+        // 3. Delete the login itself (service_role key)
         const { error } = await supabaseAdmin.auth.admin.deleteUser(userId)
 
         if (error) {
