@@ -1,0 +1,335 @@
+diff --git a/readwise-landing/app/api/admin/delete-user/route.js b/readwise-landing/app/api/admin/delete-user/route.js
+index e93afb7..02125e5 100644
+--- a/readwise-landing/app/api/admin/delete-user/route.js
++++ b/readwise-landing/app/api/admin/delete-user/route.js
+@@ -1,7 +1,7 @@
+ import { createServerClient } from '@supabase/ssr'
+ import { cookies } from 'next/headers'
+ import { NextResponse } from 'next/server'
+-import { supabaseAdmin } from '@/lib/supabaseAdmin'
++import { supabaseAdmin } from '@/lib/supabase/supabaseAdmin'
+ 
+ export async function POST(request) {
+     try {
+diff --git a/readwise-landing/app/api/deepseek/chat/route.js b/readwise-landing/app/api/deepseek/chat/route.js
+deleted file mode 100644
+index b41954f..0000000
+--- a/readwise-landing/app/api/deepseek/chat/route.js
++++ /dev/null
+@@ -1,69 +0,0 @@
+-// API route to interact with DeepSeek
+-// Usage: POST /api/deepseek/chat
+-
+-import deepseekConfig from '@/config/deepseek';
+-
+-export async function POST(req) {
+-  try {
+-    const { message, conversationHistory = [] } = await req.json();
+-
+-    if (!message) {
+-      return Response.json(
+-        { error: 'Message is required' },
+-        { status: 400 }
+-      );
+-    }
+-
+-    if (!deepseekConfig.apiKey) {
+-      return Response.json(
+-        { error: 'DeepSeek API key is not configured' },
+-        { status: 500 }
+-      );
+-    }
+-
+-    // Prepare messages for DeepSeek API
+-    const messages = [
+-      ...conversationHistory,
+-      { role: 'user', content: message }
+-    ];
+-
+-    // Call DeepSeek API
+-    const response = await fetch(`${deepseekConfig.baseURL}/chat/completions`, {
+-      method: 'POST',
+-      headers: {
+-        'Content-Type': 'application/json',
+-        'Authorization': `Bearer ${deepseekConfig.apiKey}`,
+-      },
+-      body: JSON.stringify({
+-        model: deepseekConfig.model,
+-        messages: messages,
+-        temperature: 0.7,
+-        max_tokens: 1000,
+-      }),
+-    });
+-
+-    if (!response.ok) {
+-      const error = await response.json();
+-      console.error('DeepSeek API error:', error);
+-      return Response.json(
+-        { error: 'Failed to get response from DeepSeek' },
+-        { status: response.status }
+-      );
+-    }
+-
+-    const data = await response.json();
+-    const assistantMessage = data.choices[0].message.content;
+-
+-    return Response.json({
+-      message: assistantMessage,
+-      usage: data.usage,
+-    });
+-
+-  } catch (error) {
+-    console.error('DeepSeek API route error:', error);
+-    return Response.json(
+-      { error: 'Internal server error' },
+-      { status: 500 }
+-    );
+-  }
+-}
+diff --git a/readwise-landing/app/api/deepseek/stream/route.js b/readwise-landing/app/api/deepseek/stream/route.js
+deleted file mode 100644
+index 9ce0cf5..0000000
+--- a/readwise-landing/app/api/deepseek/stream/route.js
++++ /dev/null
+@@ -1,108 +0,0 @@
+-// Streaming API route for real-time responses
+-// Usage: POST /api/deepseek/stream
+-
+-import deepseekConfig from '@/config/deepseek';
+-
+-export async function POST(req) {
+-  try {
+-    const { message, conversationHistory = [] } = await req.json();
+-
+-    if (!message) {
+-      return Response.json(
+-        { error: 'Message is required' },
+-        { status: 400 }
+-      );
+-    }
+-
+-    if (!deepseekConfig.apiKey) {
+-      return Response.json(
+-        { error: 'DeepSeek API key is not configured' },
+-        { status: 500 }
+-      );
+-    }
+-
+-    // Prepare messages for DeepSeek API
+-    const messages = [
+-      ...conversationHistory,
+-      { role: 'user', content: message }
+-    ];
+-
+-    // Call DeepSeek API with streaming
+-    const response = await fetch(`${deepseekConfig.baseURL}/chat/completions`, {
+-      method: 'POST',
+-      headers: {
+-        'Content-Type': 'application/json',
+-        'Authorization': `Bearer ${deepseekConfig.apiKey}`,
+-      },
+-      body: JSON.stringify({
+-        model: deepseekConfig.model,
+-        messages: messages,
+-        temperature: 0.7,
+-        max_tokens: 1000,
+-        stream: true,
+-      }),
+-    });
+-
+-    if (!response.ok) {
+-      const error = await response.json();
+-      console.error('DeepSeek API error:', error);
+-      return Response.json(
+-        { error: 'Failed to stream from DeepSeek' },
+-        { status: response.status }
+-      );
+-    }
+-
+-    // Create a ReadableStream from the response
+-    const stream = new ReadableStream({
+-      async start(controller) {
+-        try {
+-          const reader = response.body.getReader();
+-          const decoder = new TextDecoder();
+-
+-          while (true) {
+-            const { done, value } = await reader.read();
+-            if (done) break;
+-
+-            const chunk = decoder.decode(value, { stream: true });
+-            const lines = chunk.split('\n');
+-
+-            for (const line of lines) {
+-              if (line.startsWith('data: ')) {
+-                const data = line.slice(6);
+-                if (data === '[DONE]') {
+-                  controller.close();
+-                  return;
+-                }
+-
+-                try {
+-                  const parsed = JSON.parse(data);
+-                  const content = parsed.choices[0]?.delta?.content;
+-                  if (content) {
+-                    controller.enqueue(new TextEncoder().encode(content));
+-                  }
+-                } catch (e) {
+-                  // Ignore parse errors
+-                }
+-              }
+-            }
+-          }
+-        } catch (error) {
+-          controller.error(error);
+-        }
+-      },
+-    });
+-
+-    return new Response(stream, {
+-      headers: {
+-        'Content-Type': 'text/event-stream',
+-        'Cache-Control': 'no-cache',
+-      },
+-    });
+-  } catch (error) {
+-    console.error('DeepSeek streaming error:', error);
+-    return Response.json(
+-      { error: 'Internal server error' },
+-      { status: 500 }
+-    );
+-  }
+-}
+diff --git a/readwise-landing/app/test-deepseek/page.js b/readwise-landing/app/test-deepseek/page.js
+deleted file mode 100644
+index 467b7d8..0000000
+--- a/readwise-landing/app/test-deepseek/page.js
++++ /dev/null
+@@ -1,100 +0,0 @@
+-'use client';
+-
+-import { useState } from 'react';
+-import { useDeepSeek } from '@/hooks/useDeepSeek';
+-
+-export default function DeepSeekTestPage() {
+-  const { messages, loading, error, sendMessage, clearConversation } = useDeepSeek();
+-  const [input, setInput] = useState('');
+-
+-  const handleSend = async (e) => {
+-    e.preventDefault();
+-    if (!input.trim()) return;
+-
+-    try {
+-      await sendMessage(input);
+-      setInput('');
+-    } catch (err) {
+-      console.error('Error sending message:', err);
+-    }
+-  };
+-
+-  return (
+-    <div className="min-h-screen bg-gray-50 p-8">
+-      <div className="max-w-2xl mx-auto">
+-        <h1 className="text-3xl font-bold mb-8">DeepSeek API Test</h1>
+-
+-        {/* Status */}
+-        <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded">
+-          <p className="text-sm text-gray-600">
+-            <span className="font-semibold">API Status:</span> {error ? '❌ Error' : '✅ Connected'}
+-          </p>
+-          {error && <p className="text-sm text-red-600 mt-2">{error}</p>}
+-        </div>
+-
+-        {/* Chat Messages */}
+-        <div className="bg-white border border-gray-200 rounded-lg p-6 mb-6 h-96 overflow-y-auto">
+-          {messages.length === 0 ? (
+-            <p className="text-gray-500 text-center py-12">
+-              No messages yet. Send a message to get started!
+-            </p>
+-          ) : (
+-            <div className="space-y-4">
+-              {messages.map((msg, idx) => (
+-                <div
+-                  key={idx}
+-                  className={`flex ${
+-                    msg.role === 'user' ? 'justify-end' : 'justify-start'
+-                  }`}
+-                >
+-                  <div
+-                    className={`max-w-xs px-4 py-2 rounded-lg ${
+-                      msg.role === 'user'
+-                        ? 'bg-blue-500 text-white'
+-                        : 'bg-gray-200 text-gray-900'
+-                    }`}
+-                  >
+-                    {msg.content}
+-                  </div>
+-                </div>
+-              ))}
+-              {loading && (
+-                <div className="flex justify-start">
+-                  <div className="bg-gray-200 text-gray-900 px-4 py-2 rounded-lg">
+-                    Thinking...
+-                  </div>
+-                </div>
+-              )}
+-            </div>
+-          )}
+-        </div>
+-
+-        {/* Input Form */}
+-        <form onSubmit={handleSend} className="flex gap-2">
+-          <input
+-            type="text"
+-            value={input}
+-            onChange={(e) => setInput(e.target.value)}
+-            placeholder="Type your message..."
+-            disabled={loading}
+-            className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-100"
+-          />
+-          <button
+-            type="submit"
+-            disabled={loading || !input.trim()}
+-            className="px-6 py-2 bg-blue-500 text-white rounded-lg hover:bg-blue-600 disabled:bg-gray-400"
+-          >
+-            {loading ? 'Sending...' : 'Send'}
+-          </button>
+-          <button
+-            type="button"
+-            onClick={clearConversation}
+-            className="px-4 py-2 bg-gray-300 text-gray-700 rounded-lg hover:bg-gray-400"
+-          >
+-            Clear
+-          </button>
+-        </form>
+-      </div>
+-    </div>
+-  );
+-}
+diff --git a/readwise-landing/config/deepseek.js b/readwise-landing/config/deepseek.js
+index 2459cf1..8c2f09f 100644
+--- a/readwise-landing/config/deepseek.js
++++ b/readwise-landing/config/deepseek.js
+@@ -2,7 +2,7 @@
+ // Store your API key in an environment variable for security
+ 
+ const deepseekConfig = {
+-  apiKey: process.env.DEEPSEEK_API_KEY || process.env.NEXT_PUBLIC_DEEPSEEK_API_KEY,
++  apiKey: process.env.DEEPSEEK_API_KEY,
+   baseURL: 'https://api.deepseek.com/v1',
+   model: 'deepseek-chat',
+   timeout: 30000,
+diff --git a/readwise-landing/jsconfig.json b/readwise-landing/jsconfig.json
+new file mode 100644
+index 0000000..9c33383
+--- /dev/null
++++ b/readwise-landing/jsconfig.json
+@@ -0,0 +1,8 @@
++{
++  "compilerOptions": {
++    "baseUrl": ".",
++    "paths": {
++      "@/*": ["./*"]
++    }
++  }
++}
