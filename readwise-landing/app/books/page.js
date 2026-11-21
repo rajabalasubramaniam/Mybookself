@@ -46,7 +46,8 @@ export default function BooksPage() {
     }
     if (newStatus === 'finished') {
       updates.finished_reading_at = new Date().toISOString();
-      updates.current_page = updates.total_pages; // mark as fully read
+      const current = books.find(b => b.id === bookId);
+      if (current?.total_pages) updates.current_page = current.total_pages; // mark as fully read
     }
 
     await supabase.from('books').update(updates).eq('id', bookId);
@@ -55,6 +56,20 @@ export default function BooksPage() {
 
   const updateNotes = async (bookId, notes) => {
     await supabase.from('books').update({ notes, updated_at: new Date().toISOString() }).eq('id', bookId);
+    loadBooks();
+  };
+
+  const updateShelf = async (bookId, shelf) => {
+    const book = books.find(b => b.id === bookId);
+    const lent = (shelf.lent_to || '').trim();
+    const updates = {
+      shelf_location: (shelf.shelf_location || '').trim() || null,
+      bought_at: (shelf.bought_at || '').trim() || null,
+      lent_to: lent || null,
+      lent_on: lent ? (book?.lent_to === lent && book?.lent_on ? book.lent_on : new Date().toISOString().slice(0, 10)) : null,
+      updated_at: new Date().toISOString(),
+    };
+    await supabase.from('books').update(updates).eq('id', bookId);
     loadBooks();
   };
 
@@ -87,6 +102,7 @@ export default function BooksPage() {
                   book={book} 
                   onStatusChange={updateReadingStatus}
                   onNotesUpdate={updateNotes}
+                  onShelfUpdate={updateShelf}
                 />
               ))}
             </div>
@@ -104,6 +120,7 @@ export default function BooksPage() {
                   book={book} 
                   onStatusChange={updateReadingStatus}
                   onNotesUpdate={updateNotes}
+                  onShelfUpdate={updateShelf}
                 />
               ))}
             </div>
@@ -121,6 +138,7 @@ export default function BooksPage() {
                   book={book} 
                   onStatusChange={updateReadingStatus}
                   onNotesUpdate={updateNotes}
+                  onShelfUpdate={updateShelf}
                   showRating={true}
                 />
               ))}
@@ -142,10 +160,24 @@ export default function BooksPage() {
 }
 
 // Book Card Component
-function BookCard({ book, onStatusChange, onNotesUpdate, showRating = false }) {
+function BookCard({ book, onStatusChange, onNotesUpdate, onShelfUpdate, showRating = false }) {
+  const [showShelf, setShowShelf] = useState(false);
+  const [shelf, setShelf] = useState({
+    shelf_location: book.shelf_location || "",
+    bought_at: book.bought_at || "",
+    lent_to: book.lent_to || "",
+  });
+  const [savingShelf, setSavingShelf] = useState(false);
   const [showNotes, setShowNotes] = useState(false);
   const [notes, setNotes] = useState(book.notes || "");
   const [savingNotes, setSavingNotes] = useState(false);
+
+  const handleSaveShelf = async () => {
+    setSavingShelf(true);
+    await onShelfUpdate(book.id, shelf);
+    setSavingShelf(false);
+    setShowShelf(false);
+  };
 
   const handleSaveNotes = async () => {
     setSavingNotes(true);
@@ -168,6 +200,8 @@ function BookCard({ book, onStatusChange, onNotesUpdate, showRating = false }) {
           <h3 className="font-bold text-blue-900">{book.title}</h3>
           <p className="text-sm text-gray-600">{book.author || 'Unknown'}</p>
           {book.genre && <p className="text-xs text-gray-400 mt-1">Genre: {book.genre}</p>}
+          {book.shelf_location && <p className="text-xs text-gray-500 mt-1">📍 {book.shelf_location}</p>}
+          {book.lent_to && <p className="text-xs text-amber-700 mt-1">🤝 Lent to {book.lent_to}</p>}
           
           {/* Status Dropdown */}
           <select
@@ -179,6 +213,25 @@ function BookCard({ book, onStatusChange, onNotesUpdate, showRating = false }) {
             <option value="currently_reading">📖 Currently Reading</option>
             <option value="finished">✅ Finished</option>
           </select>
+
+          {/* Shelf details */}
+          <button
+            onClick={() => setShowShelf(!showShelf)}
+            className="mt-2 text-xs text-blue-600 hover:text-blue-800 block"
+          >
+            📍 Shelf details
+          </button>
+
+          {showShelf && (
+            <div className="mt-2 space-y-1">
+              <input type="text" value={shelf.shelf_location} onChange={(e) => setShelf({ ...shelf, shelf_location: e.target.value })} placeholder="Shelf or room" className="w-full text-xs border rounded p-2" />
+              <input type="text" value={shelf.bought_at} onChange={(e) => setShelf({ ...shelf, bought_at: e.target.value })} placeholder="Bought at" className="w-full text-xs border rounded p-2" />
+              <input type="text" value={shelf.lent_to} onChange={(e) => setShelf({ ...shelf, lent_to: e.target.value })} placeholder="Lent to (leave empty if at home)" className="w-full text-xs border rounded p-2" />
+              <button onClick={handleSaveShelf} disabled={savingShelf} className="text-xs bg-blue-900 text-white px-2 py-1 rounded">
+                {savingShelf ? "Saving..." : "Save"}
+              </button>
+            </div>
+          )}
 
           {/* Notes Button */}
           <button

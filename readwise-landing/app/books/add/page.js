@@ -5,6 +5,7 @@ import { createClient } from "../../../lib/supabase/client";
 import axios from "axios";
 import Notification from "../../../components/Notification";
 import Link from "next/link";
+import CoverUpload from "../../../components/CoverUpload";
 
 // Predefined genre list
 const genres = [
@@ -32,6 +33,7 @@ export default function AddBook() {
     const [loading, setLoading] = useState(false);
     const [searching, setSearching] = useState(false);
     const [manualEntry, setManualEntry] = useState(false);
+    const [shelf, setShelf] = useState({ shelf_location: "", bought_at: "" });
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
@@ -142,6 +144,8 @@ export default function AddBook() {
                 total_pages: bookData.pageCount || bookData.total_pages || 0,
                 status: 'unread',
                 reading_status: 'queue',  // NEW: default reading status
+                shelf_location: shelf.shelf_location.trim() || null,
+                bought_at: shelf.bought_at.trim() || null,
                 genre: bookData.genre || null,  // NEW: genre field
                 current_page: 0,
                 created_at: new Date().toISOString(),
@@ -215,6 +219,18 @@ export default function AddBook() {
                     >
                         📝 Manual Entry
                     </button>
+                </div>
+
+                <div className="bg-white rounded-xl shadow p-4 mb-6 grid md:grid-cols-2 gap-4">
+                    <div>
+                        <label htmlFor="shelf_location" className="block text-sm text-gray-700 font-medium mb-1">Shelf or room (optional)</label>
+                        <input id="shelf_location" type="text" value={shelf.shelf_location} onChange={(e) => setShelf({ ...shelf, shelf_location: e.target.value })} placeholder="e.g. Hall shelf 2" className="w-full px-3 py-2 border rounded-lg" />
+                    </div>
+                    <div>
+                        <label htmlFor="bought_at" className="block text-sm text-gray-700 font-medium mb-1">Bought at (optional)</label>
+                        <input id="bought_at" type="text" value={shelf.bought_at} onChange={(e) => setShelf({ ...shelf, bought_at: e.target.value })} placeholder="e.g. Chennai Book Fair 2026" className="w-full px-3 py-2 border rounded-lg" />
+                    </div>
+                    <p className="md:col-span-2 text-xs text-gray-500">These apply to every book you add on this page.</p>
                 </div>
 
                 {!manualEntry ? (
@@ -331,8 +347,13 @@ export default function AddBook() {
                                 />
                             </div>
 
+                            <CoverUpload
+                                value={manualBook.cover_url}
+                                onChange={(url) => setManualBook({ ...manualBook, cover_url: url })}
+                            />
+
                             <div>
-                                <label className="block text-gray-700 font-medium mb-2">Cover Image URL</label>
+                                <label className="block text-gray-700 font-medium mb-2">Cover Image URL (optional)</label>
                                 <input
                                     type="url"
                                     value={manualBook.cover_url}
