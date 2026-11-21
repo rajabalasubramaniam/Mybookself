@@ -19,14 +19,22 @@ export default function PublisherInventory() {
 
     const { data, error } = await supabase
       .from('publisher_inventory')
-      .select(`
-        *,
-        book:books(title, author, cover_url)
-      `)
+      .select('*')
       .eq('publisher_id', user.id)
       .order('created_at', { ascending: false });
 
-    if (!error) setItems(data || []);
+    if (!error) {
+      const ids = (data || []).map(i => i.book_id).filter(Boolean);
+      let bookMap = {};
+      if (ids.length > 0) {
+        const { data: bookRows } = await supabase
+          .from('public_books')
+          .select('id, title, author, cover_url')
+          .in('id', ids);
+        bookMap = Object.fromEntries((bookRows || []).map(b => [b.id, b]));
+      }
+      setItems((data || []).map(i => ({ ...i, book: bookMap[i.book_id] || null })));
+    }
     setLoading(false);
   };
 

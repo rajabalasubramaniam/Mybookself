@@ -31,7 +31,7 @@ export default function LoginForm() {
 
     return (
         <form onSubmit={handleLogin} className="max-w-md mx-auto mt-8 p-6 bg-white rounded-xl shadow">
-            <h2 className="text-2xl font-bold text-blue-900 mb-6">Login to ReadWise</h2>
+            <h2 className="text-2xl font-bold text-blue-900 mb-6">Login to MyBookSelf</h2>
             
             {error && (
                 <div className="mb-4 p-3 bg-red-100 text-red-700 rounded">

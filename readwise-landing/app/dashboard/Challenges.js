@@ -117,14 +117,14 @@ export default function Challenges() {
             // Open share dialog
             if (navigator.share) {
                 navigator.share({
-                    title: 'Reading Achievement on ReadWise!',
-                    text: `I just ${data.action} on ReadWise!`,
+                    title: 'Reading Achievement on MyBookSelf!',
+                    text: `I just ${data.action} on MyBookSelf!`,
                     url: window.location.origin
                 });
             } else {
                 // Fallback - copy to clipboard
                 navigator.clipboard.writeText(
-                    `I just ${data.action} on ReadWise! Check it out at ${window.location.origin}`
+                    `I just ${data.action} on MyBookSelf! Check it out at ${window.location.origin}`
                 );
                 alert('Share link copied to clipboard!');
             }

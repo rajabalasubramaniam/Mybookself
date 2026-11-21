@@ -18,19 +18,19 @@ export default async function Home() {
                     <div className="max-w-7xl mx-auto px-4 py-20">
                         <div className="max-w-3xl">
                             <h1 className="text-5xl font-bold mb-6">
-                                Your Gateway to
-                                <span className="text-yellow-400"> Unlimited Reading</span>
+                                Know the library
+                                <span className="text-yellow-400"> you own</span>
                             </h1>
                             <p className="text-xl text-blue-100 mb-8">
-                                Track your reading journey, discover new books, connect with authors, 
-                                and join a community of book lovers.
+                                Put your bookshelf online, see what you have read and what is still waiting, 
+                                and get your next book to finish.
                             </p>
                             <div className="flex gap-4">
                                 <Link 
                                     href="/auth/signup" 
                                     className="bg-yellow-400 text-blue-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition"
                                 >
-                                    Start Your Journey
+                                    Start Your Shelf
                                 </Link>
                                 <Link 
                                     href="#trending" 
@@ -65,8 +65,8 @@ export default async function Home() {
                                             href={`/author/${encodeURIComponent(author.author)}`}
                                             className="block p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition"
                                         >
-                                            <p className="font-semibold text-gray-800">{author.author}</p>
-                                            <p className="text-sm text-gray-500">{author.count} books</p>
+                                            <p className="font-semibold text-gray-800">{author.author.replace(/\b([a-z])/g, (m) => m.toUpperCase())}</p>
+                                            <p className="text-sm text-gray-500">{author.count} {author.count === 1 ? 'book' : 'books'}</p>
                                         </Link>
                                     ))}
                                 </div>
@@ -110,13 +110,13 @@ export default async function Home() {
                             Ready to Transform Your Reading?
                         </h2>
                         <p className="text-gray-600 mb-8">
-                            Join thousands of readers who are finally finishing their books
+                            Add your first ten books in minutes. Free while we grow.
                         </p>
                         <Link 
                             href="/auth/signup" 
                             className="bg-blue-900 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-800 transition inline-block"
                         >
-                            Get Started Free
+                            Start Your Shelf
                         </Link>
                     </div>
                 </section>

@@ -41,7 +41,7 @@ export default function Header() {
 
             <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
                 <Link href="/" className="text-2xl font-bold text-blue-900">
-                    ReadWise
+                    MyBookSelf
                 </Link>
 
                 {/* Desktop Navigation */}

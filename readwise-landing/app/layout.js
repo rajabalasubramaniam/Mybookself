@@ -7,10 +7,17 @@ import Breadcrumbs from "../components/Breadcrumbs";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata = {
-  title: "ReadWise - Finish What You Started",
+  title: "MyBookSelf - Know the library you own",
   description:
-    "Turn your unread books into finished stories. Organize your physical library digitally and actually finish the books you buy.",
-  keywords: "reading app, book tracker, digital library, finish books",
+    "Digitise your physical bookshelf, see what you own and what you have read, and finish the books you buy.",
+  keywords: "reading app, book tracker, digital library, home library, finish books",
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || "https://www.mybookself.com"),
+  openGraph: {
+    title: "MyBookSelf - Know the library you own",
+    description: "Digitise your physical bookshelf and finish the books you buy.",
+    siteName: "MyBookSelf",
+    type: "website",
+  },
 };
 
 export default function RootLayout({ children }) {

@@ -10,6 +10,7 @@ export default function EditProfile() {
     const [fullName, setFullName] = useState("");
     const [username, setUsername] = useState("");
     const [readingGoal, setReadingGoal] = useState(12);
+    const [libraryPublic, setLibraryPublic] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const router = useRouter();
@@ -34,6 +35,7 @@ export default function EditProfile() {
                     setFullName(profile.full_name || '');
                     setUsername(profile.username || '');
                     setReadingGoal(profile.reading_goal || 12);
+                    setLibraryPublic(!!profile.library_public);
                 }
             } catch (err) {
                 setError(err.message);
@@ -59,6 +61,7 @@ export default function EditProfile() {
                     full_name: fullName,
                     username: username,
                     reading_goal: readingGoal,
+                    library_public: libraryPublic,
                     updated_at: new Date().toISOString(),
                 })
                 .eq('id', user.id);
@@ -128,6 +131,20 @@ export default function EditProfile() {
                                 min="1"
                                 max="100"
                             />
+                        </div>
+
+                        <div className="flex items-start gap-3">
+                            <input
+                                id="library_public"
+                                type="checkbox"
+                                checked={libraryPublic}
+                                onChange={(e) => setLibraryPublic(e.target.checked)}
+                                className="mt-1 h-4 w-4"
+                            />
+                            <label htmlFor="library_public" className="text-gray-700">
+                                Show my shelf on my public profile
+                                <span className="block text-sm text-gray-500">Off by default. Your notes always stay private.</span>
+                            </label>
                         </div>
 
                         <div className="flex space-x-4">

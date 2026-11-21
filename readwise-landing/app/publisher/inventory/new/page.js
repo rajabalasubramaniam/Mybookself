@@ -54,7 +54,7 @@ export default function NewInventoryItem() {
 
   const fetchBooks = async () => {
     const { data } = await supabase
-      .from('books')
+      .from('public_books')
       .select('id, title, author')
       .order('title');
     setBooks(data || []);

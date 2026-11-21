@@ -19,7 +19,7 @@ export default async function PublicProfilePage({ params }) {
 
   // 1. Fetch base profile
   const { data: profile, error } = await supabase
-    .from('profiles')
+    .from('public_profiles')
     .select('*')
     .eq('id', userId)
     .single()
@@ -46,7 +46,17 @@ export default async function PublicProfilePage({ params }) {
     roleData = data || {}
   }
 
-  // 3. Optionally fetch user's public books or reviews (future enhancement)
+  // 3. Library: only when the owner has made it public (no private notes are exposed)
+  let library = []
+  if (profile.library_public) {
+    const { data } = await supabase
+      .from('public_libraries')
+      .select('id, title, author, cover_url, status, reading_status')
+      .eq('user_id', userId)
+      .order('created_at', { ascending: false })
+      .limit(60)
+    library = data || []
+  }
 
   return (
     <div className="min-h-screen bg-gray-50 py-12">
@@ -100,8 +110,27 @@ export default async function PublicProfilePage({ params }) {
             {profile.role === 'reader' && (
               <div className="mt-6 border-t pt-6">
                 <h2 className="text-xl font-semibold mb-4">Reader</h2>
-                <p className="text-gray-700">Reading goal: {profile.reading_goal || 12} books/year</p>
-                {/* Could add favorite genres, recent books, etc. later */}
+                <p className="text-gray-700">{profile.books_read || 0} books read</p>
+              </div>
+            )}
+
+            {/* Public library (owner's choice) */}
+            {profile.library_public && (
+              <div className="mt-6 border-t pt-6">
+                <h2 className="text-xl font-semibold mb-4">Shelf</h2>
+                {library.length === 0 ? (
+                  <p className="text-gray-500">No books on this shelf yet.</p>
+                ) : (
+                  <ul className="grid sm:grid-cols-2 gap-3">
+                    {library.map(b => (
+                      <li key={b.id} className="p-3 bg-gray-50 rounded-lg">
+                        <p className="font-medium text-gray-800">{b.title}</p>
+                        <p className="text-sm text-gray-500">{b.author}</p>
+                        <p className="text-xs text-gray-400 mt-1 capitalize">{b.reading_status || b.status}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
             )}
 

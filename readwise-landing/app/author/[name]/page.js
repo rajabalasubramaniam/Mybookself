@@ -18,21 +18,25 @@ export default async function AuthorPage({ params }) {
     )
 
     const { data: books } = await supabase
-        .from('books')
+        .from('public_books')
         .select('*')
         .eq('author', authorName)
         .order('title')
 
-    const { data: reviews } = await supabase
+    const { data: reviewRows } = await supabase
         .from('user_reviews')
-        .select(`
-            *,
-            user:profiles(username, full_name, avatar_url)
-        `)
+        .select('*')
         .in('book_id', books?.map(b => b.id) || [])
         .eq('is_approved', true)
         .order('created_at', { ascending: false })
         .limit(10)
+
+    const reviewerIds = [...new Set((reviewRows || []).map(r => r.user_id))]
+    const { data: reviewers } = reviewerIds.length
+        ? await supabase.from('public_profiles').select('id, username, full_name, avatar_url').in('id', reviewerIds)
+        : { data: [] }
+    const reviewerMap = Object.fromEntries((reviewers || []).map(p => [p.id, p]))
+    const reviews = (reviewRows || []).map(r => ({ ...r, user: reviewerMap[r.user_id] || null }))
 
     return (
         <div className="min-h-screen bg-gray-50 py-8">

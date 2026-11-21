@@ -21,16 +21,16 @@ export default function Hero() {
       <div className="max-w-7xl mx-auto px-6 grid md:grid-cols-2 gap-12 items-center">
         <div>
           <h1 className="text-4xl md:text-5xl font-bold text-blue-900 leading-tight">
-            Welcome to <span className="text-amber-500">ReadWise</span>
+            Welcome to <span className="text-amber-500">MyBookSelf</span>
           </h1>
           <p className="mt-6 text-lg text-gray-600">
-            At ReadWise, we connect passionate book readers with publishers and writers from around the world.
+            At MyBookSelf, we connect passionate book readers with publishers and writers from around the world.
             Our platform promotes great books and encourages readers to develop their reading habits,
             helping them grow into intellectual and insightful individuals.
           </p>
           <p className="mt-4 text-gray-600">
             Whether you're looking for the latest releases, seeking recommendations from renowned authors,
-            or simply wanting to explore new genres, ReadWise is your gateway to a world of knowledge and
+            or simply wanting to explore new genres, MyBookSelf is your gateway to a world of knowledge and
             imagination. Join our community today and embark on a journey of discovery through the magic of reading.
           </p>
 
@@ -63,7 +63,7 @@ export default function Hero() {
           </div>
 
           <p className="mt-4 text-sm text-green-600">
-            Join thousands of readers who have transformed their reading journey.
+            Free to start. Your notes stay private.
           </p>
         </div>
 

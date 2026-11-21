@@ -38,7 +38,7 @@ export default function Features() {
         <div className="text-center mb-12">
           <h2 className="text-3xl font-bold text-blue-900">Our Services</h2>
           <p className="mt-4 text-gray-600 max-w-2xl mx-auto">
-            Unlock your literary journey with ReadWise – where your library breathes life,
+            Unlock your literary journey with MyBookSelf – where your library breathes life,
             connections flourish, and stories find their place.
           </p>
         </div>

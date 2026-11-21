@@ -35,24 +35,21 @@ export async function getHomepageData() {
             // Trending books
             supabase
                 .from('trending_books')
-                .select(`
-                    *,
-                    book:books(*)
-                `)
+                .select('*')
                 .eq('trend_type', 'daily')
                 .order('rank', { ascending: true })
                 .limit(10),
 
             // Featured/New releases
             supabase
-                .from('books')
+                .from('public_books')
                 .select('id, title, author, cover_url, created_at')
                 .order('created_at', { ascending: false })
                 .limit(8),
 
             // Get all books to calculate popular authors
             supabase
-                .from('books')
+                .from('public_books')
                 .select('author')
                 .not('author', 'is', null)
         ])
@@ -74,14 +71,14 @@ export async function getHomepageData() {
                 // Get user profiles for these reviews
                 const userIds = [...new Set(reviews.map(r => r.user_id))];
                 const { data: profiles } = await supabase
-                    .from('profiles')
+                    .from('public_profiles')
                     .select('id, full_name, username, avatar_url')
                     .in('id', userIds);
 
                 // Get book details for these reviews
                 const bookIds = [...new Set(reviews.map(r => r.book_id))];
                 const { data: books } = await supabase
-                    .from('books')
+                    .from('public_books')
                     .select('id, title, author, cover_url')
                     .in('id', bookIds);
 
@@ -101,6 +98,18 @@ export async function getHomepageData() {
             console.error('Error processing reviews:', reviewError);
         }
 
+        // Attach book details to trending rows (public catalog view)
+        let trendingWithBooks = trending || [];
+        const trendingIds = trendingWithBooks.map(t => t.book_id).filter(Boolean);
+        if (trendingIds.length > 0) {
+            const { data: trendingBooks } = await supabase
+                .from('public_books')
+                .select('*')
+                .in('id', trendingIds);
+            const trendingMap = Object.fromEntries((trendingBooks || []).map(b => [b.id, b]));
+            trendingWithBooks = trendingWithBooks.map(t => ({ ...t, book: trendingMap[t.book_id] || null }));
+        }
+
         // Calculate popular authors manually
         const authorCount = {};
         (booksForAuthors || []).forEach(book => {
@@ -117,7 +126,7 @@ export async function getHomepageData() {
 
         return {
             events: events || [],
-            trending: trending || [],
+            trending: trendingWithBooks,
             recentReviews: recentReviews || [],
             featuredBooks: featuredBooks || [],
             popularAuthors: popularAuthors || []

@@ -69,7 +69,7 @@ export default function Dashboard() {
             {/* Navigation */}
             <nav className="bg-white shadow-sm">
                 <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                    <Link href="/" className="text-2xl font-bold text-blue-900">ReadWise</Link>
+                    <Link href="/" className="text-2xl font-bold text-blue-900">MyBookSelf</Link>
                     <div className="flex items-center space-x-4">
                         <Link href="/profile/edit" className="text-gray-600 hover:text-blue-900">
                             Edit Profile

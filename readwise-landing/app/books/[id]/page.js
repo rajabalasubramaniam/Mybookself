@@ -209,12 +209,12 @@ export default function BookPage({ params }) {
             if (navigator.share) {
                 navigator.share({
                     title: 'Just finished a book!',
-                    text: `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on ReadWise!`,
+                    text: `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on MyBookSelf!`,
                     url: window.location.origin
                 });
             } else {
                 navigator.clipboard.writeText(
-                    `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on ReadWise! ${window.location.origin}`
+                    `I just finished reading "${book.title}" by ${book.author || 'Unknown'} (${book.total_pages} pages) on MyBookSelf! ${window.location.origin}`
                 );
                 alert('✨ Share link copied to clipboard!');
             }
@@ -310,7 +310,7 @@ export default function BookPage({ params }) {
                         ← Back to Library
                     </Link>
                     <Link href="/dashboard" className="text-2xl font-bold text-blue-900">
-                        ReadWise
+                        MyBookSelf
                     </Link>
                 </div>
             </nav>

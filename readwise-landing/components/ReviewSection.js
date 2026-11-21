@@ -27,17 +27,25 @@ export default function ReviewSection({ bookId }) {
     const loadReviews = async () => {
         try {
             // Get approved reviews
-            const { data: reviewsData } = await supabase
+            const { data: reviewRows } = await supabase
                 .from('user_reviews')
-                .select(`
-                    *,
-                    user:profiles(username, full_name, avatar_url)
-                `)
+                .select('*')
                 .eq('book_id', bookId)
                 .eq('is_approved', true)
                 .order('created_at', { ascending: false });
 
-            setReviews(reviewsData || []);
+            const reviewerIds = [...new Set((reviewRows || []).map(r => r.user_id))];
+            let reviewerMap = {};
+            if (reviewerIds.length > 0) {
+                const { data: reviewers } = await supabase
+                    .from('public_profiles')
+                    .select('id, username, full_name, avatar_url')
+                    .in('id', reviewerIds);
+                reviewerMap = Object.fromEntries((reviewers || []).map(p => [p.id, p]));
+            }
+            const reviewsData = (reviewRows || []).map(r => ({ ...r, user: reviewerMap[r.user_id] || null }));
+
+            setReviews(reviewsData);
 
             // Get current user's review if exists
             if (user) {
