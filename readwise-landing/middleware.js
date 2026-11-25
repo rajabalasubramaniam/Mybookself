@@ -26,6 +26,7 @@ export async function middleware(request) {
         const { data: { user } } = await supabase.auth.getUser()
 		
 		// Check for unapproved users on protected routes
+		let okUser = false
 		if (user) {
 			const { data: profile } = await supabase
 				.from('profiles')
@@ -34,7 +35,8 @@ export async function middleware(request) {
 				.single()
 
 			// Block banned users
-			if (profile?.is_banned) {
+			okUser = !!profile?.is_approved && !profile?.is_banned
+			if (profile?.is_banned && !request.nextUrl.pathname.startsWith('/auth')) {
 				await supabase.auth.signOut()
 				return NextResponse.redirect(new URL('/auth/login?error=banned', request.url))
 			}
@@ -108,7 +110,7 @@ export async function middleware(request) {
         if (!user && request.nextUrl.pathname.startsWith('/books')) {
             return NextResponse.redirect(new URL('/auth/login', request.url))
         }
-        if (user && request.nextUrl.pathname.startsWith('/auth')) {
+        if (okUser && request.nextUrl.pathname.startsWith('/auth')) {
             return NextResponse.redirect(new URL('/dashboard', request.url))
         }
     } catch (error) {
@@ -119,5 +121,5 @@ export async function middleware(request) {
 }
 
 export const config = {
-  matcher: ['/admin/:path*', '/dashboard/:path*', '/profile/:path*', '/books/:path*', '/writer/:path*', '/publisher/:path*'],
+  matcher: ['/admin/:path*', '/dashboard/:path*', '/profile/:path*', '/books/:path*', '/writer/:path*', '/publisher/:path*', '/auth/login', '/auth/signup'],
 };

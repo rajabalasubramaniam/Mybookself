@@ -5,6 +5,7 @@ import Link from "next/link";
 import { searchBooksByISBN } from "../../../lib/bookSearch";
 import { createClient } from "../../../lib/supabase/client";
 import CoverUpload from "../../../components/CoverUpload";
+import { GENRES } from "../../../lib/genreGuess";
 
 // ---- ISBN helpers ----
 function isbn13Valid(code) {
@@ -72,6 +73,7 @@ export default function BatchScan() {
                 author: book.author || "",
                 cover_url: book.cover_url || null,
                 total_pages: book.total_pages || null,
+                genre: book.genre || "",
             });
         } catch (e) {
             patchItem(isbn, { status: "notfound" });
@@ -134,6 +136,7 @@ export default function BatchScan() {
                 isbn: it.isbn,
                 cover_url: it.cover_url || null,
                 total_pages: it.total_pages || 0,
+                genre: it.genre || null,
                 status: "unread",
                 reading_status: "queue",
                 current_page: 0,
@@ -221,6 +224,10 @@ export default function BatchScan() {
                                                 )}
                                                 <input type="text" aria-label="Title" value={it.title} onChange={(e) => patchItem(it.isbn, { title: e.target.value })} placeholder="Title" className="w-full px-2 py-1 border rounded text-sm" />
                                                 <input type="text" aria-label="Author" value={it.author} onChange={(e) => patchItem(it.isbn, { author: e.target.value })} placeholder="Author" className="w-full px-2 py-1 border rounded text-sm" />
+                                                <select aria-label="Genre" value={it.genre || ""} onChange={(e) => patchItem(it.isbn, { genre: e.target.value })} className="w-full px-2 py-1 border rounded text-sm">
+                                                    <option value="">Genre (optional)</option>
+                                                    {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
+                                                </select>
                                                 <CoverUpload compact id={`cover-${it.isbn}`} value={it.cover_url} onChange={(url) => patchItem(it.isbn, { cover_url: url })} />
                                             </div>
                                         )}

@@ -5,6 +5,8 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
 import Goals from './Goals';
+import NextBook from '../../components/NextBook';
+import ShelfHealth from '../../components/ShelfHealth';
 import Challenges from './Challenges';
 
 export default function Dashboard() {
@@ -87,6 +89,13 @@ export default function Dashboard() {
                         <p className="text-4xl font-bold text-blue-900">{finishedBooks}</p>
                     </div>
                 </div>
+
+                {books.length > 0 && (
+                    <div className="grid md:grid-cols-2 gap-6 mb-8">
+                        <NextBook books={books} />
+                        <ShelfHealth books={books} />
+                    </div>
+                )}
 
                 {/* Quick Actions */}
                 <div className="grid md:grid-cols-2 gap-6">

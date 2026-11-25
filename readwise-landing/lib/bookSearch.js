@@ -1,4 +1,5 @@
 import axios from "axios";
+import { guessGenre } from "./genreGuess";
 
 export async function searchBooksByISBN(isbn) {
     const errors = [];
@@ -39,6 +40,7 @@ async function searchOpenLibrary(isbn) {
             isbn: isbn,
             cover_url: bookData.cover?.large || bookData.cover?.medium,
             total_pages: bookData.number_of_pages,
+            genre: guessGenre(bookData.subjects),
             description: bookData.notes || bookData.description || `A book by ${bookData.authors?.[0]?.name || 'unknown author'}`,
         };
     }

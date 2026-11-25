@@ -3,12 +3,15 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../../lib/supabase/client";
 import Link from "next/link";
 import axios from "axios";
+import NextBook from "../../../components/NextBook";
+import ShelfHealth from "../../../components/ShelfHealth";
 
 export default function Recommendations() {
     const [recommendations, setRecommendations] = useState([]);
     const [loading, setLoading] = useState(true);
     const [userGenres, setUserGenres] = useState([]);
     const [userAuthors, setUserAuthors] = useState([]);
+    const [owned, setOwned] = useState([]);
     const supabase = createClient();
 
     useEffect(() => {
@@ -19,6 +22,9 @@ export default function Recommendations() {
         try {
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) return;
+
+            const { data: ownedBooks } = await supabase.from('books').select('*').eq('user_id', user.id);
+            setOwned(ownedBooks || []);
 
             // 1. Get user's finished books
             const { data: finishedBooks } = await supabase
@@ -90,6 +96,12 @@ export default function Recommendations() {
         }
     };
 
+    const startReading = async (id, st) => {
+        const now = new Date().toISOString();
+        await supabase.from('books').update({ reading_status: st, status: 'reading', started_reading_at: now, updated_at: now }).eq('id', id);
+        setOwned(owned.map(b => b.id === id ? { ...b, reading_status: st } : b));
+    };
+
     if (loading) {
         return (
             <div className="min-h-screen flex items-center justify-center">
@@ -107,9 +119,18 @@ export default function Recommendations() {
                     </Link>
                 </div>
 
-                <h1 className="text-3xl font-bold text-blue-900 mb-2">📖 Book Recommendations</h1>
-                <p className="text-gray-600 mb-8">
-                    Based on your reading history, we think you'll enjoy these books.
+                <h1 className="text-3xl font-bold text-blue-900 mb-2">📖 Next Book</h1>
+                <p className="text-gray-600 mb-6">
+                    Chosen from the books you already own.
+                </p>
+                <div className="grid md:grid-cols-2 gap-4 mb-10">
+                    <NextBook books={owned} onStart={startReading} />
+                    <ShelfHealth books={owned} />
+                </div>
+
+                <h2 className="text-2xl font-bold text-blue-900 mb-1">Discover new books</h2>
+                <p className="text-gray-600 mb-6">
+                    Ideas for later, based on what you have finished.
                 </p>
 
                 {/* User Reading Profile */}
