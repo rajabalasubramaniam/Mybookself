@@ -1,4 +1,4 @@
-import Header from "../components/Header";
+import StartButton from "../components/StartButton";
 import Footer from "../components/Footer";
 import { getHomepageData } from "../lib/homepage";
 import TrendingCarousel from "../components/homepage/TrendingCarousel";
@@ -11,7 +11,6 @@ export default async function Home() {
 
     return (
         <>
-            <Header />
             <main className="bg-gray-50">
                 {/* Hero Section */}
                 <section className="bg-gradient-to-br from-blue-900 via-blue-800 to-blue-900 text-white">
@@ -26,12 +25,9 @@ export default async function Home() {
                                 and get your next book to finish.
                             </p>
                             <div className="flex gap-4">
-                                <Link 
-                                    href="/auth/signup" 
+                                <StartButton
                                     className="bg-yellow-400 text-blue-900 px-8 py-4 rounded-xl font-semibold hover:bg-yellow-300 transition"
-                                >
-                                    Start Your Shelf
-                                </Link>
+                                />
                                 <Link 
                                     href="#trending" 
                                     className="bg-white/20 backdrop-blur-sm text-white px-8 py-4 rounded-xl font-semibold hover:bg-white/30 transition"
@@ -112,12 +108,9 @@ export default async function Home() {
                         <p className="text-gray-600 mb-8">
                             Add your first ten books in minutes. Free while we grow.
                         </p>
-                        <Link 
-                            href="/auth/signup" 
+                        <StartButton
                             className="bg-blue-900 text-white px-8 py-4 rounded-xl font-semibold hover:bg-blue-800 transition inline-block"
-                        >
-                            Start Your Shelf
-                        </Link>
+                        />
                     </div>
                 </section>
             </main>

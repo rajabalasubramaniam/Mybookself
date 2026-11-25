@@ -34,6 +34,7 @@ export default function AddBook() {
     const [searching, setSearching] = useState(false);
     const [manualEntry, setManualEntry] = useState(false);
     const [shelf, setShelf] = useState({ shelf_location: "", bought_at: "" });
+    const [coverOverrides, setCoverOverrides] = useState({});
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
     const [showNotification, setShowNotification] = useState(false);
@@ -192,8 +193,8 @@ export default function AddBook() {
                     <Link href="/books" className="text-blue-900 hover:underline mb-4 inline-block">
                         ← Back to Library
                     </Link>
-                    <h1 className="text-3xl font-bold text-blue-900">Add Books to Your Library</h1>
-                    <p className="text-gray-600 mt-2">Search for books or add them manually</p>
+                    <h1 className="text-3xl font-bold text-blue-900">Add books to your shelf</h1>
+                    <p className="text-gray-600 mt-2">Choose the quickest way for the books in your hand.</p>
                 </div>
 
                 {error && (
@@ -201,6 +202,11 @@ export default function AddBook() {
                         <strong>Error:</strong> {error}
                     </div>
                 )}
+
+                <Link href="/books/scan" className="block mb-4 p-5 bg-blue-900 text-white rounded-xl shadow hover:bg-blue-800">
+                    <span className="text-lg font-semibold">📷 Scan barcodes</span>
+                    <span className="block text-sm text-blue-100 mt-1">Fastest for many books: scan a whole shelf with your phone camera, then save them all at once.</span>
+                </Link>
 
                 <div className="flex space-x-4 mb-6">
                     <button
@@ -263,17 +269,24 @@ export default function AddBook() {
                                 {searchResults.map((book) => (
                                     <div key={book.id} className="bg-white rounded-xl shadow-lg p-6">
                                         <div className="flex flex-col md:flex-row gap-6">
-                                            {book.coverUrl && (
-                                                <img src={book.coverUrl} alt={book.title} className="w-24 h-32 object-cover rounded-lg" />
+                                            {(coverOverrides[book.id] || book.coverUrl) ? (
+                                                <img src={coverOverrides[book.id] || book.coverUrl} alt={book.title} className="w-24 h-32 object-cover rounded-lg" />
+                                            ) : (
+                                                <div className="w-24 h-32 bg-gray-100 rounded-lg flex items-center justify-center text-xs text-gray-400">No cover</div>
                                             )}
                                             <div className="flex-1">
                                                 <h3 className="text-xl font-semibold text-blue-900">{book.title}</h3>
                                                 <p className="text-gray-600">by {book.authors.join(', ')}</p>
                                                 {book.genre && <p className="text-sm text-gray-500 mt-1">Genre: {book.genre}</p>}
                                                 {book.pageCount > 0 && <p className="text-sm text-gray-500">{book.pageCount} pages</p>}
+                                                {!book.coverUrl && (
+                                                    <div className="mt-2">
+                                                        <CoverUpload compact id={`cover-${book.id}`} value={coverOverrides[book.id]} onChange={(url) => setCoverOverrides({ ...coverOverrides, [book.id]: url })} />
+                                                    </div>
+                                                )}
                                             </div>
                                             <button
-                                                onClick={() => addBookToLibrary(book)}
+                                                onClick={() => addBookToLibrary({ ...book, coverUrl: coverOverrides[book.id] || book.coverUrl })}
                                                 disabled={loading}
                                                 className="bg-green-600 text-white px-6 py-3 rounded-lg hover:bg-green-700"
                                             >

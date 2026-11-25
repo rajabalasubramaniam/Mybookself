@@ -61,32 +61,11 @@ export default function Dashboard() {
     }
 
     const totalBooks = books.length;
-    const readingBooks = books.filter(b => b.status === 'reading').length;
-    const finishedBooks = books.filter(b => b.status === 'finished').length;
+    const readingBooks = books.filter(b => b.reading_status === 'currently_reading').length;
+    const finishedBooks = books.filter(b => b.reading_status === 'finished').length;
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Navigation */}
-            <nav className="bg-white shadow-sm">
-                <div className="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
-                    <Link href="/" className="text-2xl font-bold text-blue-900">MyBookSelf</Link>
-                    <div className="flex items-center space-x-4">
-                        <Link href="/profile/edit" className="text-gray-600 hover:text-blue-900">
-                            Edit Profile
-                        </Link>
-                        <button
-                            onClick={async () => {
-                                await supabase.auth.signOut();
-                                router.push('/');
-                            }}
-                            className="bg-red-500 text-white px-4 py-2 rounded-lg hover:bg-red-600"
-                        >
-                            Sign Out
-                        </button>
-                    </div>
-                </div>
-            </nav>
-
             {/* Main Content */}
             <div className="max-w-7xl mx-auto px-4 py-8">
                 <h1 className="text-3xl font-bold text-blue-900 mb-8">
@@ -138,10 +117,6 @@ export default function Dashboard() {
 						<p className="text-gray-600">Long-form essays and personal reflections</p>
 					</Link>
 
-					<Link href="/dashboard/my-reviews" className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
-						<h3 className="text-xl font-semibold text-blue-900 mb-2">⭐ My Reviews</h3>
-						<p className="text-gray-600">Short public reviews and ratings</p>
-					</Link>
 					<Link href={`/profile/${user.id}`} className="bg-white p-6 rounded-xl shadow hover:shadow-lg transition">
 							<h3 className="text-xl font-semibold text-blue-900 mb-2">👤 My Profile</h3>
 						<p className="text-gray-600">View your public profile</p>

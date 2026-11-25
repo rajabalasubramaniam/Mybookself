@@ -20,7 +20,7 @@ async function resizeToJpeg(file, maxSide = 700, quality = 0.8) {
     );
 }
 
-export default function CoverUpload({ value, onChange }) {
+export default function CoverUpload({ value, onChange, id = "cover-photo-input", compact = false }) {
     const [busy, setBusy] = useState(false);
     const [error, setError] = useState(null);
     const supabase = createClient();
@@ -49,6 +49,19 @@ export default function CoverUpload({ value, onChange }) {
         }
     };
 
+    if (compact) {
+        return (
+            <div className="flex items-center gap-2">
+                {value && <img src={value} alt="Cover preview" className="w-8 h-11 object-cover rounded border" />}
+                <label htmlFor={id} className="cursor-pointer text-xs text-blue-700 underline">
+                    {busy ? "Uploading..." : value ? "Retake cover photo" : "📷 Add cover photo"}
+                </label>
+                <input id={id} type="file" accept="image/*" capture="environment" onChange={handleFile} disabled={busy} className="sr-only" />
+                {error && <span className="text-xs text-red-600">{error}</span>}
+            </div>
+        );
+    }
+
     return (
         <div>
             <label className="block text-gray-700 font-medium mb-2">Cover photo</label>
@@ -62,13 +75,13 @@ export default function CoverUpload({ value, onChange }) {
                 )}
                 <div>
                     <label
-                        htmlFor="cover-photo-input"
+                        htmlFor={id}
                         className="inline-block cursor-pointer bg-blue-900 text-white px-4 py-2 rounded-lg hover:bg-blue-800 text-sm"
                     >
                         {busy ? "Uploading..." : value ? "Retake photo" : "Take or choose photo"}
                     </label>
                     <input
-                        id="cover-photo-input"
+                        id={id}
                         type="file"
                         accept="image/*"
                         capture="environment"

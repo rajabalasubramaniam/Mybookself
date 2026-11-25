@@ -304,16 +304,11 @@ export default function BookPage({ params }) {
     // ========== MAIN RENDER ==========
     return (
         <div className="min-h-screen bg-gray-50">
-            <nav className="bg-white shadow-sm">
-                <div className="max-w-4xl mx-auto px-4 py-4 flex justify-between items-center">
-                    <Link href="/books" className="text-blue-900 hover:underline">
-                        ← Back to Library
-                    </Link>
-                    <Link href="/dashboard" className="text-2xl font-bold text-blue-900">
-                        MyBookSelf
-                    </Link>
-                </div>
-            </nav>
+            <div className="max-w-4xl mx-auto px-4 pt-4">
+                <Link href="/books" className="text-blue-900 hover:underline">
+                    ← Back to My Shelf
+                </Link>
+            </div>
 
             <div className="max-w-4xl mx-auto px-4 py-8">
                 <div className="bg-white rounded-xl shadow-lg overflow-hidden">

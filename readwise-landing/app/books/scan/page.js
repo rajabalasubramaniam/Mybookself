@@ -4,6 +4,7 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { searchBooksByISBN } from "../../../lib/bookSearch";
 import { createClient } from "../../../lib/supabase/client";
+import CoverUpload from "../../../components/CoverUpload";
 
 // ---- ISBN helpers ----
 function isbn13Valid(code) {
@@ -220,6 +221,7 @@ export default function BatchScan() {
                                                 )}
                                                 <input type="text" aria-label="Title" value={it.title} onChange={(e) => patchItem(it.isbn, { title: e.target.value })} placeholder="Title" className="w-full px-2 py-1 border rounded text-sm" />
                                                 <input type="text" aria-label="Author" value={it.author} onChange={(e) => patchItem(it.isbn, { author: e.target.value })} placeholder="Author" className="w-full px-2 py-1 border rounded text-sm" />
+                                                <CoverUpload compact id={`cover-${it.isbn}`} value={it.cover_url} onChange={(url) => patchItem(it.isbn, { cover_url: url })} />
                                             </div>
                                         )}
                                     </div>
