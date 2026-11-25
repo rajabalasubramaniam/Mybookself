@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { createClient } from "../../../lib/supabase/client";
 import Link from "next/link";
 
+import { looksLikeJunkName } from "../../../lib/junkName";
+
 export default function AdminUsers() {
     const [users, setUsers] = useState([]);
     const [loading, setLoading] = useState(true);
@@ -166,6 +168,28 @@ const approveUser = async (userId) => {
         alert('Failed to approve user');
     }
 };
+    const deleteFlagged = async () => {
+        const targets = users.filter(u => looksLikeJunkName(u.full_name) && !u.is_approved && !u.is_admin);
+        if (targets.length === 0) return;
+        if (!confirm(`Delete ${targets.length} flagged accounts and all their data? This cannot be undone.`)) return;
+        let failed = 0;
+        for (const u of targets) {
+            try {
+                const res = await fetch('/api/admin/delete-user', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ userId: u.id }),
+                });
+                if (!res.ok) failed++;
+            } catch (e) {
+                failed++;
+            }
+        }
+        alert(`${targets.length - failed} deleted${failed ? `, ${failed} failed` : ''}.`);
+        loadUsers();
+        loadStats();
+    };
+
     // Filter users
     const filtered = users.filter(u => {
         const matchesSearch = 
@@ -179,6 +203,7 @@ const approveUser = async (userId) => {
         if (statusFilter === 'active') return !u.is_banned;
         if (statusFilter === 'banned') return u.is_banned;
         if (statusFilter === 'admin') return u.is_admin;
+        if (statusFilter === 'flagged') return looksLikeJunkName(u.full_name) && !u.is_approved && !u.is_admin;
         return true;
     });
 	
@@ -235,7 +260,13 @@ const approveUser = async (userId) => {
                     <option value="active">Active</option>
                     <option value="banned">Banned</option>
                     <option value="admin">Admins</option>
+                    <option value="flagged">Flagged junk names</option>
                 </select>
+                {statusFilter === 'flagged' && filtered.length > 0 && (
+                    <button onClick={deleteFlagged} className="px-4 py-2 bg-red-600 text-white rounded-lg hover:bg-red-700">
+                        Delete {filtered.length} flagged
+                    </button>
+                )}
             </div>
 
             {/* Users Table */}

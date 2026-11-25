@@ -1,8 +1,10 @@
 "use client";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { createClient } from "../../../lib/supabase/client";
 import Link from "next/link";
+import Turnstile from "../../../components/Turnstile";
+import { looksLikeJunkName } from "../../../lib/junkName";
 
 export default function SignUp() {
     const [email, setEmail] = useState("");
@@ -12,6 +14,10 @@ export default function SignUp() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState(null);
     const [success, setSuccess] = useState(false);
+    const [honeypot, setHoneypot] = useState("");
+    const [captchaToken, setCaptchaToken] = useState(null);
+    const startedAt = useRef(Date.now());
+    const siteKey = process.env.NEXT_PUBLIC_TURNSTILE_SITE_KEY;
     const router = useRouter();
     const supabase = createClient();
 
@@ -38,6 +44,28 @@ export default function SignUp() {
         setLoading(true);
         setError(null);
 
+        // Bots fill the hidden field; pretend success and do nothing
+        if (honeypot) {
+            setSuccess(true);
+            setLoading(false);
+            return;
+        }
+        if (Date.now() - startedAt.current < 3000) {
+            setError("Please wait a moment, then press Sign up again.");
+            setLoading(false);
+            return;
+        }
+        if (looksLikeJunkName(fullName)) {
+            setError("Please enter your real name, for example Priya Raman.");
+            setLoading(false);
+            return;
+        }
+        if (siteKey && !captchaToken) {
+            setError("Please complete the security check.");
+            setLoading(false);
+            return;
+        }
+
         // Validate email
         if (!isValidEmail(email)) {
             setError("Please use a valid email address. Temporary/disposable emails are not allowed.");
@@ -54,6 +82,7 @@ export default function SignUp() {
                     role: role,
                 },
                 emailRedirectTo: `${window.location.origin}/auth/callback`,
+                ...(captchaToken ? { captchaToken } : {}),
             },
         });
 
@@ -155,8 +184,16 @@ export default function SignUp() {
                                 <option value="writer">Writer</option>
                                 <option value="publisher">Publisher</option>
                             </select>
+                            <p className="mt-1 text-xs text-gray-500">Writer and publisher accounts are reviewed before their pages go public.</p>
+                        </div>
+                        {/* Hidden trap field for bots */}
+                        <div aria-hidden="true" style={{ position: "absolute", left: "-10000px", width: "1px", height: "1px", overflow: "hidden" }}>
+                            <label htmlFor="website">Website</label>
+                            <input id="website" name="website" type="text" tabIndex={-1} autoComplete="off" value={honeypot} onChange={(e) => setHoneypot(e.target.value)} />
                         </div>
                     </div>
+
+                    <Turnstile siteKey={siteKey} onToken={setCaptchaToken} />
 
                     <div>
                         <button
