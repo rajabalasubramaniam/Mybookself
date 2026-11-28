@@ -116,7 +116,7 @@ export default function NewInventoryItem() {
           />
         </div>
         <div>
-          <label className="block mb-1">Price ($)</label>
+          <label className="block mb-1">Price (₹)</label>
           <input
             type="number"
             step="0.01"

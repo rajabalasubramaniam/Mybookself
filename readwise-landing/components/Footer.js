@@ -5,6 +5,10 @@ export default function Footer() {
       <h3 className="font-display text-2xl text-gold-300">MyBookSelf</h3>
       <p className="mt-2 text-peach-200">Know every book you own.</p>
       <p className="mt-4 text-sm">
+        <a href="/writers" className="text-peach-200 hover:text-white underline">Writers</a>
+        <span className="mx-3 text-forest-400">|</span>
+        <a href="/publishers" className="text-peach-200 hover:text-white underline">Publishers</a>
+        <span className="mx-3 text-forest-400">|</span>
         <a href="/events" className="text-peach-200 hover:text-white underline">Events</a>
         <span className="mx-3 text-forest-400">|</span>
         <a href="/reviews" className="text-peach-200 hover:text-white underline">Reviews</a>

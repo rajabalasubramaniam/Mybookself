@@ -59,6 +59,23 @@ export default async function PublicProfilePage({ params }) {
     library = data || []
   }
 
+  // Writer books / publisher catalogue (approved accounts only, via public views)
+  let writerBooks = []
+  let catalog = []
+  if (profile.role === 'writer') {
+    const { data } = await supabase.from('public_writer_books').select('*').eq('writer_id', userId).order('created_at', { ascending: false })
+    writerBooks = data || []
+  } else if (profile.role === 'publisher') {
+    const { data } = await supabase.from('public_publisher_catalog').select('*').eq('publisher_id', userId).order('created_at', { ascending: false })
+    const ids = (data || []).map((c) => c.book_id).filter(Boolean)
+    let bm = {}
+    if (ids.length) {
+      const { data: bs } = await supabase.from('public_books').select('id, title, author, cover_url').in('id', ids)
+      bm = Object.fromEntries((bs || []).map((b) => [b.id, b]))
+    }
+    catalog = (data || []).map((c) => ({ ...c, book: bm[c.book_id] || {} }))
+  }
+
   const finished = library.filter((b) => b.reading_status === 'finished').length
   const reading = library.filter((b) => b.reading_status === 'currently_reading')
   const type = profile.library_public && library.length ? readerType(library) : null
@@ -111,6 +128,41 @@ export default async function PublicProfilePage({ params }) {
             {roleData.website && <p className="mt-2">Website: <a href={roleData.website} target="_blank" rel="noopener noreferrer" className="text-gold-700 hover:underline">{roleData.website}</a></p>}
             {roleData.address && <p className="mt-1">{roleData.address}</p>}
             {roleData.contact_email && <p className="mt-1">{roleData.contact_email}</p>}
+          </div>
+        )}
+
+        {writerBooks.length > 0 && (
+          <div>
+            <h2 className="font-display text-2xl text-forest-900 mb-3">Books by {profile.full_name}</h2>
+            <div className="grid sm:grid-cols-2 gap-4">
+              {writerBooks.map((b) => (
+                <div key={b.id} className="bg-white rounded-2xl border border-peach-200 p-4 flex gap-4">
+                  {b.cover_url ? <img src={b.cover_url} alt="" className="w-20 h-28 object-cover rounded shadow-[3px_3px_0_rgba(18,53,36,.18)]" /> : <div className="w-20 h-28 rounded bg-peach-200" />}
+                  <div className="min-w-0">
+                    <h3 className="font-semibold text-forest-900">{b.title}</h3>
+                    {b.price && <p className="text-gold-700 font-medium">₹{b.price}</p>}
+                    {b.description && <p className="text-sm text-forest-700 mt-1 line-clamp-4">{b.description}</p>}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {catalog.length > 0 && (
+          <div>
+            <h2 className="font-display text-2xl text-forest-900 mb-3">Catalogue</h2>
+            <div className="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 gap-4">
+              {catalog.map((c) => (
+                <div key={c.id}>
+                  <div className="aspect-[2/3] rounded-md overflow-hidden bg-peach-200 shadow-[3px_3px_0_rgba(18,53,36,.18)]">
+                    {c.book.cover_url ? <img src={c.book.cover_url} alt={c.book.title} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center p-1 text-center text-[11px] text-forest-700">{c.book.title}</div>}
+                  </div>
+                  <p className="text-xs mt-1 text-forest-900 line-clamp-2">{c.book.title}</p>
+                  <p className="text-xs text-forest-700">{c.price ? `₹${c.price}` : ''} <span className={c.in_stock ? 'text-forest-500' : 'text-red-600'}>{c.in_stock ? 'In stock' : 'Out of stock'}</span></p>
+                </div>
+              ))}
+            </div>
           </div>
         )}
 

@@ -72,7 +72,7 @@ export default function PublisherInventory() {
                   <h3 className="font-semibold">{item.book?.title || 'Unknown book'}</h3>
                   <p className="text-sm text-gray-600">by {item.book?.author || 'Unknown'}</p>
                   <p className="text-sm">Quantity: {item.quantity}</p>
-                  <p className="text-sm">Price: ${item.price}</p>
+                  <p className="text-sm">Price: ₹{item.price}</p>
                 </div>
               </div>
               <div className="flex gap-2">

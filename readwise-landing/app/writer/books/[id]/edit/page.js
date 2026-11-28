@@ -2,6 +2,7 @@
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
+import CoverUpload from "../../../../../components/CoverUpload";
 import { createClient } from "../../../../../lib/supabase/client";
 
 export default function EditWriterBook({ params }) {
@@ -62,7 +63,7 @@ export default function EditWriterBook({ params }) {
         title,
         description,
         price: price ? parseFloat(price) : null,
-        cover_url: coverUrl,
+        cover_url: coverUrl || null,
         updated_at: new Date().toISOString(),
       })
       .eq('id', params.id)
@@ -102,18 +103,12 @@ export default function EditWriterBook({ params }) {
         <input
           type="number"
           step="0.01"
-          placeholder="Price"
+          placeholder="Price in ₹"
           value={price}
           onChange={(e) => setPrice(e.target.value)}
           className="w-full border p-2 rounded"
         />
-        <input
-          type="url"
-          placeholder="Cover Image URL"
-          value={coverUrl}
-          onChange={(e) => setCoverUrl(e.target.value)}
-          className="w-full border p-2 rounded"
-        />
+        <CoverUpload id="writer-cover" value={coverUrl} onChange={setCoverUrl} />
         <div className="flex gap-4">
           <button
             type="submit"

@@ -89,6 +89,9 @@ export default function AdminDashboard() {
                     <Link href="/admin/reviews/pending" className="p-4 border rounded-lg hover:bg-blue-50 transition">
                         ⭐ Moderate Pending Reviews ({stats.pendingReviews})
                     </Link>
+                    <Link href="/admin/approvals" className="p-4 border rounded-lg hover:bg-blue-50 transition">
+                        ✅ Writer and publisher approvals
+                    </Link>
                     <Link href="/admin/exchanges" className="p-4 border rounded-lg hover:bg-blue-50 transition">
                         🔄 Manage Book Exchanges
                     </Link>

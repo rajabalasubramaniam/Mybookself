@@ -108,6 +108,20 @@ export default async function Home() {
           </div>
         </section>
 
+        {/* For writers and publishers */}
+        <section className="max-w-7xl mx-auto px-4 pb-16">
+          <div className="rounded-2xl bg-forest-900 text-peach-100 p-8 md:p-10 grid md:grid-cols-2 gap-6 items-center">
+            <div>
+              <h2 className="font-display text-3xl text-peach-50">Write it. Publish it. Get it onto readers' shelves.</h2>
+              <p className="mt-3 text-peach-200">Writers and publishers get a public page for their books, and readers who collect books for real.</p>
+            </div>
+            <div className="flex flex-wrap gap-3 md:justify-end">
+              <Link href="/writers" className="bg-gold-400 text-forest-900 font-semibold px-6 py-3 rounded-lg hover:bg-gold-300 transition">Meet the writers</Link>
+              <Link href="/publishers" className="border border-peach-200/50 px-6 py-3 rounded-lg font-semibold hover:bg-forest-800 transition">See publishers</Link>
+            </div>
+          </div>
+        </section>
+
         {/* Call to action */}
         <section className="bg-peach-200">
           <div className="max-w-4xl mx-auto px-4 py-16 text-center">

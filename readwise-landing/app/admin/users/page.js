@@ -315,14 +315,7 @@ const approveUser = async (userId) => {
 								
                                 <td className="px-6 py-4 text-center">
                                     <div className="flex justify-center gap-2">
-                                        {!user.is_approved && (
-										<button
-											onClick={() => approveUser(user.id)}
-											className="bg-green-600 text-white px-3 py-1 rounded text-xs hover:bg-green-700"
-											title="Approve user"
-										>Approve</button>
-										)}
-										<button
+                                        										<button
                                             onClick={() => { setSelectedUser(user); setShowEditModal(true); }}
                                             className="text-blue-600 hover:text-blue-800"
                                             title="Edit"

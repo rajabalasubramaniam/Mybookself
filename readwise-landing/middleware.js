@@ -104,7 +104,7 @@ export async function middleware(request) {
         if (!user && request.nextUrl.pathname.startsWith('/dashboard')) {
             return NextResponse.redirect(new URL('/auth/login', request.url))
         }
-        if (!user && request.nextUrl.pathname.startsWith('/profile')) {
+        if (!user && request.nextUrl.pathname.startsWith('/profile') && !/^\/profile\/[0-9a-fA-F-]{36}\/?$/.test(request.nextUrl.pathname)) {
             return NextResponse.redirect(new URL('/auth/login', request.url))
         }
         if (!user && request.nextUrl.pathname.startsWith('/books')) {
