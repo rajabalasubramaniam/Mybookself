@@ -5,6 +5,7 @@ import Link from "next/link";
 import { createClient } from "../../lib/supabase/client";
 import ShelfHealth from "../../components/ShelfHealth";
 import NextBook from "../../components/NextBook";
+import ReadingStreak from "../../components/ReadingStreak";
 
 const STATUS_TABS = [
   ["all", "All"],
@@ -65,6 +66,11 @@ export default function BooksPage() {
     loadBooks();
   };
 
+  const updateReflection = async (bookId, rating, reflection) => {
+    await supabase.from('books').update({ user_rating: rating || null, reflection: (reflection || '').trim() || null, updated_at: new Date().toISOString() }).eq('id', bookId);
+    loadBooks();
+  };
+
   const updateShelf = async (bookId, shelfData) => {
     const book = books.find(b => b.id === bookId);
     const lent = (shelfData.lent_to || '').trim();
@@ -119,6 +125,7 @@ export default function BooksPage() {
               <div className="grid md:grid-cols-2 gap-4">
                 <NextBook books={books} onStart={updateReadingStatus} />
                 <ShelfHealth books={books} />
+                <ReadingStreak books={books} onLogged={loadBooks} />
               </div>
             )}
           </div>
@@ -200,7 +207,7 @@ export default function BooksPage() {
       {openBook && (
         <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4" onClick={() => setOpenId(null)}>
           <div className="w-full max-w-lg max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
-            <BookCard key={openBook.id} book={openBook} onStatusChange={updateReadingStatus} onNotesUpdate={updateNotes} onShelfUpdate={updateShelf} />
+            <BookCard key={openBook.id} book={openBook} onStatusChange={updateReadingStatus} onNotesUpdate={updateNotes} onShelfUpdate={updateShelf} onReflectionUpdate={updateReflection} />
             <button onClick={() => setOpenId(null)} className="mt-2 w-full bg-white rounded-lg py-2 text-sm text-gray-700">Close</button>
           </div>
         </div>
@@ -210,7 +217,10 @@ export default function BooksPage() {
 }
 
 // Book Card Component
-function BookCard({ book, onStatusChange, onNotesUpdate, onShelfUpdate, showRating = false }) {
+function BookCard({ book, onStatusChange, onNotesUpdate, onShelfUpdate, onReflectionUpdate, showRating = false }) {
+  const [rating, setRating] = useState(book.user_rating || 0);
+  const [reflection, setReflection] = useState(book.reflection || "");
+  const [savedRef, setSavedRef] = useState(false);
   const [showShelf, setShowShelf] = useState(false);
   const [shelf, setShelf] = useState({
     shelf_location: book.shelf_location || "",
@@ -310,14 +320,16 @@ function BookCard({ book, onStatusChange, onNotesUpdate, onShelfUpdate, showRati
             </div>
           )}
 
-          {showRating && !book.user_rating && (
-            <div className="mt-2">
-              <span className="text-xs text-gray-500">Rate this book:</span>
+          {book.reading_status === 'finished' && onReflectionUpdate && (
+            <div className="mt-3 p-3 bg-green-50 rounded-lg">
+              <p className="text-xs font-medium text-green-800">You finished this. How was it?</p>
               <div className="flex gap-1 mt-1">
                 {[1,2,3,4,5].map(r => (
-                  <button key={r} className="text-gray-300 hover:text-yellow-400">★</button>
+                  <button key={r} type="button" onClick={() => { setRating(r); setSavedRef(false); }} className={`text-2xl leading-none ${r <= rating ? 'text-yellow-400' : 'text-gray-300'}`} aria-label={`${r} stars`}>★</button>
                 ))}
               </div>
+              <textarea value={reflection} onChange={(e) => { setReflection(e.target.value); setSavedRef(false); }} rows="2" placeholder="One line to remember this book by..." className="w-full text-xs border rounded p-2 mt-2" />
+              <button onClick={async () => { await onReflectionUpdate(book.id, rating, reflection); setSavedRef(true); }} className="mt-1 text-xs bg-green-700 text-white px-2 py-1 rounded">{savedRef ? 'Saved ✓' : 'Save'}</button>
             </div>
           )}
 

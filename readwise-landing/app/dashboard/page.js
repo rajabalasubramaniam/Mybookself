@@ -7,6 +7,7 @@ import { createClient } from "../../lib/supabase/client";
 import Goals from './Goals';
 import NextBook from '../../components/NextBook';
 import ShelfHealth from '../../components/ShelfHealth';
+import ReadingStreak from '../../components/ReadingStreak';
 import Challenges from './Challenges';
 
 export default function Dashboard() {
@@ -94,6 +95,7 @@ export default function Dashboard() {
                     <div className="grid md:grid-cols-2 gap-6 mb-8">
                         <NextBook books={books} />
                         <ShelfHealth books={books} />
+                        <ReadingStreak books={books} />
                     </div>
                 )}
 

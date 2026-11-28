@@ -3,6 +3,8 @@ import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "../../../lib/supabase/client";
+import CoverUpload from "../../../components/CoverUpload";
+import { GENRES } from "../../../lib/genreGuess";
 
 export default function BookPage({ params }) {
     // ========== ALL useState HOOKS ==========
@@ -16,7 +18,8 @@ export default function BookPage({ params }) {
         title: '',
         author: '',
         total_pages: '',
-        cover_url: ''
+        cover_url: '',
+        genre: ''
     });
     
     // 🆕 NEW: Writing Discovery States
@@ -40,7 +43,8 @@ export default function BookPage({ params }) {
                 title: book.title || '',
                 author: book.author || '',
                 total_pages: book.total_pages || '',
-                cover_url: book.cover_url || ''
+                cover_url: book.cover_url || '',
+                genre: book.genre || ''
             });
         }
     }, [book]);
@@ -233,7 +237,8 @@ export default function BookPage({ params }) {
                     title: editForm.title,
                     author: editForm.author,
                     total_pages: parseInt(editForm.total_pages) || null,
-                    cover_url: editForm.cover_url,
+                    cover_url: editForm.cover_url || null,
+                    genre: editForm.genre || null,
                     updated_at: new Date().toISOString()
                 })
                 .eq('id', book.id);
@@ -245,7 +250,8 @@ export default function BookPage({ params }) {
                 title: editForm.title,
                 author: editForm.author,
                 total_pages: parseInt(editForm.total_pages) || null,
-                cover_url: editForm.cover_url
+                cover_url: editForm.cover_url || null,
+                genre: editForm.genre || null
             });
             
             setIsEditing(false);
@@ -445,7 +451,7 @@ export default function BookPage({ params }) {
             {/* Edit Modal */}
             {isEditing && (
                 <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-                    <div className="bg-white rounded-xl p-6 max-w-md w-full">
+                    <div className="bg-white rounded-xl p-6 max-w-md w-full max-h-[90vh] overflow-y-auto">
                         <h3 className="text-xl font-bold text-blue-900 mb-4">Edit Book Details</h3>
                         
                         <form onSubmit={handleEditSubmit} className="space-y-4">
@@ -481,13 +487,20 @@ export default function BookPage({ params }) {
                             </div>
 
                             <div>
-                                <label className="block text-gray-700 mb-2">Cover URL</label>
-                                <input
-                                    type="url"
-                                    value={editForm.cover_url}
-                                    onChange={(e) => setEditForm({...editForm, cover_url: e.target.value})}
-                                    className="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-900"
-                                />
+                                <label className="block text-gray-700 mb-2">Genre</label>
+                                <select
+                                    value={editForm.genre}
+                                    onChange={(e) => setEditForm({...editForm, genre: e.target.value})}
+                                    className="w-full px-4 py-2 border rounded-lg"
+                                >
+                                    <option value="">Not set</option>
+                                    {GENRES.map(g => <option key={g} value={g}>{g}</option>)}
+                                </select>
+                            </div>
+
+                            <div>
+                                <label className="block text-gray-700 mb-2">Cover photo</label>
+                                <CoverUpload id="edit-cover" value={editForm.cover_url} onChange={(url) => setEditForm({...editForm, cover_url: url})} />
                             </div>
 
                             <div className="flex space-x-4 pt-4">

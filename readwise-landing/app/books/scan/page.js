@@ -220,10 +220,11 @@ export default function BatchScan() {
                                         {(it.status === "found" || it.status === "notfound") && (
                                             <div className="space-y-2 mt-1">
                                                 {it.status === "notfound" && (
-                                                    <p className="text-xs text-amber-700">Not found online. Type the details.</p>
+                                                    <p className="text-xs text-amber-700">Not found online. Type the title and details below, then Save.</p>
                                                 )}
                                                 <input type="text" aria-label="Title" value={it.title} onChange={(e) => patchItem(it.isbn, { title: e.target.value })} placeholder="Title" className="w-full px-2 py-1 border rounded text-sm" />
                                                 <input type="text" aria-label="Author" value={it.author} onChange={(e) => patchItem(it.isbn, { author: e.target.value })} placeholder="Author" className="w-full px-2 py-1 border rounded text-sm" />
+                                                <input type="number" min="0" aria-label="Pages" value={it.total_pages || ""} onChange={(e) => patchItem(it.isbn, { total_pages: parseInt(e.target.value) || null })} placeholder="Pages (optional)" className="w-full px-2 py-1 border rounded text-sm" />
                                                 <select aria-label="Genre" value={it.genre || ""} onChange={(e) => patchItem(it.isbn, { genre: e.target.value })} className="w-full px-2 py-1 border rounded text-sm">
                                                     <option value="">Genre (optional)</option>
                                                     {GENRES.map((g) => <option key={g} value={g}>{g}</option>)}
