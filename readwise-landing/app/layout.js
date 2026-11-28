@@ -1,11 +1,12 @@
 import "./../styles/globals.css";
-import { Inter } from "next/font/google";
+import { Inter, Fraunces } from "next/font/google";
 import GoogleAnalytics from "./components/GoogleAnalytics";
 import { Suspense } from 'react'
 import Breadcrumbs from "../components/Breadcrumbs";
 import Header from "../components/Header";
 
 const inter = Inter({ subsets: ["latin"] });
+const fraunces = Fraunces({ subsets: ["latin"], variable: "--font-display", display: "swap" });
 
 export const metadata = {
   title: "MyBookSelf - Know the library you own",
@@ -24,7 +25,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" className="scroll-smooth">
-      <body className={`${inter.className} bg-white text-gray-800`}>
+      <body className={`${inter.className} ${fraunces.variable} bg-peach-50 text-forest-900`}>
 	  
 		<Suspense fallback={
           <div className="min-h-screen flex items-center justify-center">

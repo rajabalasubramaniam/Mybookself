@@ -3,21 +3,21 @@ import Link from "next/link";
 export default function EventsList({ events }) {
     if (!events || events.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow p-6 text-center">
-                <p className="text-gray-500">No upcoming events</p>
+            <div className="bg-white rounded-2xl border border-peach-200 p-6 text-center">
+                <p className="text-gray-500">No events scheduled yet. Check back soon.</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-xl font-bold text-blue-900 mb-4">📅 Upcoming Events</h3>
+        <div className="bg-white rounded-2xl border border-peach-200 p-6">
+            <h3 className="font-display text-2xl text-forest-900 mb-4">Upcoming events</h3>
             <div className="space-y-4">
                 {events.map((event) => (
                     <Link 
                         key={event.id} 
                         href={`/events/${event.id}`}
-                        className="block p-4 border rounded-lg hover:shadow-md transition"
+                        className="block p-4 border border-peach-200 rounded-lg hover:border-gold-400 transition"
                     >
                         <div className="flex justify-between items-start">
                             <div>
@@ -44,7 +44,7 @@ export default function EventsList({ events }) {
             </div>
             <div className="mt-4 text-center">
                 <Link href="/events" className="text-blue-900 hover:underline text-sm">
-                    View All Events →
+                    All events
                 </Link>
             </div>
         </div>

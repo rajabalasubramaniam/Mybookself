@@ -46,13 +46,13 @@ export default function Header() {
     const active = (href) => (pathname === href ? 'text-blue-900 font-semibold' : 'hover:text-blue-900');
 
     return (
-        <header className="sticky top-0 w-full bg-white shadow-sm z-50">
+        <header className="sticky top-0 w-full bg-peach-50/95 backdrop-blur border-b border-peach-200 z-50">
             <Suspense fallback={null}>
                 <SearchParamsHandler />
             </Suspense>
 
             <div className="max-w-7xl mx-auto flex justify-between items-center p-4">
-                <Link href={user ? "/dashboard" : "/"} className="text-2xl font-bold text-blue-900">
+                <Link href={user ? "/dashboard" : "/"} className="font-display text-2xl font-semibold text-forest-900">
                     MyBookSelf
                 </Link>
 

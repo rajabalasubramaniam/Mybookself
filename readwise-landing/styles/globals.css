@@ -19,3 +19,14 @@ html {
 section[id] {
   scroll-margin-top: 80px; /* height of your fixed header + some padding */
 }
+
+/* ---- MyBookSelf theme ---- */
+:focus-visible { outline: 3px solid #C8963E; outline-offset: 2px; }
+h1, h2, h3.display { font-family: var(--font-display), Georgia, serif; }
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .fade-in, .spine-in { animation: none !important; }
+}
+/* Hero shelf: spines rise into place once on load */
+.spine-in { animation: spineIn .7s cubic-bezier(.2,.7,.2,1) both; transform-origin: bottom; }
+@keyframes spineIn { from { transform: scaleY(.2); opacity: 0; } to { transform: scaleY(1); opacity: 1; } }

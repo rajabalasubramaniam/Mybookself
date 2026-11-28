@@ -27,12 +27,13 @@ export default function TrendingCarousel({ books }) {
             <div className="absolute inset-0 bg-black opacity-20"></div>
             
             <div className="relative z-10 p-8 text-white">
-                <h2 className="text-3xl font-bold mb-2">🔥 Trending Today</h2>
-                <p className="text-blue-100 mb-6">Most popular books in our community</p>
+                <h2 className="font-display text-3xl mb-2">Trending on shelves</h2>
+                <p className="text-peach-200 mb-6">The books readers here have added and finished most</p>
 
                 <div className="flex items-center justify-between">
                     <button
                         onClick={prevSlide}
+                        aria-label="Previous book"
                         className="bg-white/20 hover:bg-white/30 rounded-full p-3 transition"
                     >
                         ←
@@ -57,10 +58,10 @@ export default function TrendingCarousel({ books }) {
                                         <h3 className="text-2xl font-bold mb-2">
                                             {books[currentIndex].book?.title || books[currentIndex].title}
                                         </h3>
-                                        <p className="text-blue-100 mb-2">
+                                        <p className="text-peach-200 mb-2">
                                             by {books[currentIndex].book?.author || books[currentIndex].author || 'Unknown'}
                                         </p>
-                                        <span className="inline-block bg-yellow-400 text-blue-900 px-3 py-1 rounded-full text-sm font-semibold">
+                                        <span className="inline-block bg-gold-400 text-forest-900 px-3 py-1 rounded-full text-sm font-semibold">
                                             Rank #{books[currentIndex].rank}
                                         </span>
                                     </div>
@@ -71,6 +72,7 @@ export default function TrendingCarousel({ books }) {
 
                     <button
                         onClick={nextSlide}
+                        aria-label="Next book"
                         className="bg-white/20 hover:bg-white/30 rounded-full p-3 transition"
                     >
                         →

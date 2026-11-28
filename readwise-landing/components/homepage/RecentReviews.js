@@ -4,15 +4,15 @@ import Image from "next/image";
 export default function RecentReviews({ reviews }) {
     if (!reviews || reviews.length === 0) {
         return (
-            <div className="bg-white rounded-xl shadow p-6 text-center">
-                <p className="text-gray-500">No reviews yet</p>
+            <div className="bg-white rounded-2xl border border-peach-200 p-6 text-center">
+                <p className="text-gray-500">No reviews yet. Finish a book and be the first.</p>
             </div>
         );
     }
 
     return (
-        <div className="bg-white rounded-xl shadow p-6">
-            <h3 className="text-xl font-bold text-blue-900 mb-4">⭐ Recent Reviews</h3>
+        <div className="bg-white rounded-2xl border border-peach-200 p-6">
+            <h3 className="font-display text-2xl text-forest-900 mb-4">Recent reviews</h3>
             <div className="space-y-4">
                 {reviews.map((review) => (
                     <div key={review.id} className="border-b last:border-0 pb-4 last:pb-0">
@@ -25,7 +25,7 @@ export default function RecentReviews({ reviews }) {
                                     <p className="font-semibold text-gray-800">
                                         {review.user?.full_name || 'Anonymous'}
                                     </p>
-                                    <div className="flex text-yellow-400">
+                                    <div className="flex text-gold-500">
                                         {'★'.repeat(review.rating)}{'☆'.repeat(5 - review.rating)}
                                     </div>
                                 </div>
@@ -51,7 +51,7 @@ export default function RecentReviews({ reviews }) {
             </div>
             <div className="mt-4 text-center">
                 <Link href="/reviews" className="text-blue-900 hover:underline text-sm">
-                    Read All Reviews →
+                    All reviews
                 </Link>
             </div>
         </div>

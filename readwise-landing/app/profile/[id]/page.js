@@ -2,6 +2,7 @@ import { createServerClient } from '@supabase/ssr'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
+import { readerType } from '../../../lib/readerType'
 
 export default async function PublicProfilePage({ params }) {
   const cookieStore = cookies()
@@ -51,97 +52,111 @@ export default async function PublicProfilePage({ params }) {
   if (profile.library_public) {
     const { data } = await supabase
       .from('public_libraries')
-      .select('id, title, author, cover_url, status, reading_status')
+      .select('id, title, author, cover_url, genre, status, reading_status')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(60)
     library = data || []
   }
 
+  const finished = library.filter((b) => b.reading_status === 'finished').length
+  const reading = library.filter((b) => b.reading_status === 'currently_reading')
+  const type = profile.library_public && library.length ? readerType(library) : null
+  const pct = library.length ? Math.round((finished / library.length) * 100) : 0
+  const initial = (profile.full_name || 'U').charAt(0).toUpperCase()
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="max-w-4xl mx-auto px-4">
-        <div className="bg-white rounded-xl shadow-lg overflow-hidden">
-          <div className="p-8">
-            {/* Avatar and basic info */}
-            <div className="flex items-center gap-4 mb-6">
-              <div className="w-20 h-20 bg-blue-100 rounded-full flex items-center justify-center text-blue-900 font-bold text-3xl">
-                {profile.full_name?.charAt(0) || 'U'}
-              </div>
-              <div>
-                <h1 className="text-3xl font-bold text-blue-900">{profile.full_name}</h1>
-                <p className="text-gray-600">@{profile.username}</p>
-                <p className="text-sm text-gray-500 mt-1 capitalize">Role: {profile.role}</p>
-              </div>
-            </div>
-
-            {/* Writer details */}
-            {profile.role === 'writer' && (
-              <div className="mt-6 border-t pt-6">
-                <h2 className="text-xl font-semibold mb-4">About the Writer</h2>
-                {roleData.bio && <p className="text-gray-700 whitespace-pre-wrap">{roleData.bio}</p>}
-                {roleData.website && (
-                  <p className="mt-2">
-                    Website: <a href={roleData.website} target="_blank" rel="noopener noreferrer" className="text-blue-900 hover:underline">{roleData.website}</a>
-                  </p>
-                )}
-                {roleData.social_links?.twitter && (
-                  <p className="mt-1">Twitter: {roleData.social_links.twitter}</p>
-                )}
-              </div>
-            )}
-
-            {/* Publisher details */}
-            {profile.role === 'publisher' && (
-              <div className="mt-6 border-t pt-6">
-                <h2 className="text-xl font-semibold mb-4">{roleData.company_name || 'Publisher'}</h2>
-                {roleData.description && <p className="text-gray-700">{roleData.description}</p>}
-                {roleData.website && (
-                  <p className="mt-2">
-                    Website: <a href={roleData.website} target="_blank" rel="noopener noreferrer" className="text-blue-900 hover:underline">{roleData.website}</a>
-                  </p>
-                )}
-                {roleData.address && <p className="mt-1">📍 {roleData.address}</p>}
-                {roleData.contact_email && <p className="mt-1">📧 {roleData.contact_email}</p>}
-              </div>
-            )}
-
-            {/* Simple reader view (just basic info already shown) */}
-            {profile.role === 'reader' && (
-              <div className="mt-6 border-t pt-6">
-                <h2 className="text-xl font-semibold mb-4">Reader</h2>
-                <p className="text-gray-700">{profile.books_read || 0} books read</p>
-              </div>
-            )}
-
-            {/* Public library (owner's choice) */}
-            {profile.library_public && (
-              <div className="mt-6 border-t pt-6">
-                <h2 className="text-xl font-semibold mb-4">Shelf</h2>
-                {library.length === 0 ? (
-                  <p className="text-gray-500">No books on this shelf yet.</p>
-                ) : (
-                  <ul className="grid sm:grid-cols-2 gap-3">
-                    {library.map(b => (
-                      <li key={b.id} className="p-3 bg-gray-50 rounded-lg">
-                        <p className="font-medium text-gray-800">{b.title}</p>
-                        <p className="text-sm text-gray-500">{b.author}</p>
-                        <p className="text-xs text-gray-400 mt-1 capitalize">{b.reading_status || b.status}</p>
-                      </li>
-                    ))}
-                  </ul>
-                )}
-              </div>
-            )}
-
-            {/* Back to home link */}
-            <div className="mt-8">
-              <Link href="/" className="text-blue-900 hover:underline">
-                ← Back to Home
-              </Link>
+    <div className="min-h-screen bg-peach-50">
+      {/* Banner */}
+      <div className="bg-forest-900 text-peach-100">
+        <div className="max-w-4xl mx-auto px-4 py-10 flex items-center gap-5">
+          <div className="w-20 h-20 rounded-full bg-gold-400 text-forest-900 font-display text-4xl flex items-center justify-center shrink-0">{initial}</div>
+          <div className="min-w-0">
+            <h1 className="font-display text-3xl md:text-4xl text-peach-50 truncate">{profile.full_name}</h1>
+            <p className="text-peach-200">@{profile.username}</p>
+            <div className="flex flex-wrap gap-2 mt-2">
+              <span className="text-xs bg-forest-800 text-peach-200 px-3 py-1 rounded-full capitalize">{profile.role}</span>
+              {type && <span className="text-xs bg-gold-400 text-forest-900 font-semibold px-3 py-1 rounded-full">{type.name}</span>}
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="max-w-4xl mx-auto px-4 py-8 space-y-6">
+        {type && (
+          <div className="grid grid-cols-3 gap-3 text-center">
+            {[[library.length, 'on the shelf'], [finished, 'finished'], [`${pct}%`, 'read']].map(([n, l]) => (
+              <div key={l} className="bg-white rounded-2xl border border-peach-200 py-4">
+                <div className="font-display text-3xl text-forest-900">{n}</div>
+                <div className="text-xs text-forest-600">{l}</div>
+              </div>
+            ))}
+          </div>
+        )}
+        {type && <p className="text-forest-700">{type.note}</p>}
+
+        {profile.role === 'writer' && (
+          <div className="bg-white rounded-2xl border border-peach-200 p-6">
+            <h2 className="font-display text-2xl text-forest-900 mb-3">About the writer</h2>
+            {roleData.bio && <p className="text-forest-900 whitespace-pre-wrap leading-relaxed">{roleData.bio}</p>}
+            {roleData.website && <p className="mt-2">Website: <a href={roleData.website} target="_blank" rel="noopener noreferrer" className="text-gold-700 hover:underline">{roleData.website}</a></p>}
+            {roleData.social_links?.twitter && <p className="mt-1">Twitter: {roleData.social_links.twitter}</p>}
+          </div>
+        )}
+
+        {profile.role === 'publisher' && (
+          <div className="bg-white rounded-2xl border border-peach-200 p-6">
+            <h2 className="font-display text-2xl text-forest-900 mb-3">{roleData.company_name || 'Publisher'}</h2>
+            {roleData.description && <p className="text-forest-900 leading-relaxed">{roleData.description}</p>}
+            {roleData.website && <p className="mt-2">Website: <a href={roleData.website} target="_blank" rel="noopener noreferrer" className="text-gold-700 hover:underline">{roleData.website}</a></p>}
+            {roleData.address && <p className="mt-1">{roleData.address}</p>}
+            {roleData.contact_email && <p className="mt-1">{roleData.contact_email}</p>}
+          </div>
+        )}
+
+        {profile.role === 'reader' && !profile.library_public && (
+          <div className="bg-white rounded-2xl border border-peach-200 p-6 text-forest-700">
+            {profile.full_name} keeps their shelf private.{profile.books_read ? ` ${profile.books_read} books read.` : ''}
+          </div>
+        )}
+
+        {reading.length > 0 && (
+          <div>
+            <h2 className="font-display text-2xl text-forest-900 mb-3">Reading now</h2>
+            <div className="flex gap-3 overflow-x-auto pb-2">
+              {reading.map((b) => (
+                <div key={b.id} className="w-24 shrink-0">
+                  <div className="aspect-[2/3] rounded-md overflow-hidden bg-peach-200 shadow-[3px_3px_0_rgba(18,53,36,.18)]">
+                    {b.cover_url && <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" />}
+                  </div>
+                  <p className="text-xs mt-1 line-clamp-2 text-forest-900">{b.title}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {profile.library_public && (
+          <div>
+            <h2 className="font-display text-2xl text-forest-900 mb-3">Shelf</h2>
+            {library.length === 0 ? (
+              <p className="text-forest-700">No books on this shelf yet.</p>
+            ) : (
+              <div className="grid grid-cols-3 sm:grid-cols-5 md:grid-cols-6 gap-4">
+                {library.map((b) => (
+                  <div key={b.id}>
+                    <div className="aspect-[2/3] rounded-md overflow-hidden bg-peach-200 shadow-[3px_3px_0_rgba(18,53,36,.18)]">
+                      {b.cover_url ? <img src={b.cover_url} alt={b.title} className="w-full h-full object-cover" loading="lazy" /> : <div className="w-full h-full flex items-center justify-center p-1 text-center text-[11px] text-forest-700">{b.title}</div>}
+                    </div>
+                    <p className="text-[11px] mt-1 text-forest-900 line-clamp-2">{b.title}</p>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        <Link href="/" className="inline-block text-forest-700 hover:underline">← Back to home</Link>
       </div>
     </div>
   )
